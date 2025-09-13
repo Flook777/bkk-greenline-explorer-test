@@ -22,7 +22,7 @@ const safeJsonParse = (data, fallback = null) => {
 };
 
 
-// --- Reusable Components (Modal, Notification - no changes) ---
+// --- Reusable Components ---
 const ConfirmationModal = ({ message, onConfirm, onCancel }) => (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
         <div className="bg-white p-6 rounded-lg shadow-xl text-center w-full max-w-sm mx-4">
@@ -87,8 +87,6 @@ function AdminPanel() {
         } catch (error) {
             console.error("Fetch Error:", error);
             showNotification(error.message, 'error');
-            setPlaces([]);
-            setStations([]);
         } finally {
             setIsLoading(false);
         }
@@ -119,7 +117,6 @@ function AdminPanel() {
     
     const handleSave = async (placeData) => {
         const isUpdating = !!placeData.id;
-        // **จุดที่แก้ไข:** แก้ไข URL สำหรับการเพิ่มข้อมูลให้ถูกต้อง
         const url = isUpdating ? `${API_BASE_URL}/places/${placeData.id}` : `${API_BASE_URL}/places/add`;
         const method = isUpdating ? 'PUT' : 'POST';
 
@@ -131,13 +128,11 @@ function AdminPanel() {
             });
 
             if (!response.ok) {
-                // Versuche, die Antwort als JSON zu parsen, aber falle auf Text zurück, wenn es fehlschlägt
                 const errorText = await response.text();
                 try {
                     const errorData = JSON.parse(errorText);
                      throw new Error(errorData.error || 'Failed to save place.');
                 } catch (e) {
-                    // Wenn das Parsen als JSON fehlschlägt, ist die Antwort wahrscheinlich HTML oder einfacher Text
                     throw new Error(`Server returned a non-JSON error: ${errorText.substring(0, 100)}`);
                 }
             }
@@ -215,7 +210,6 @@ function AdminPanel() {
     );
 }
 
-// --- Place Form Component ---
 function PlaceForm({ place, onSave, onCancel, isAdding, stations, showNotification }) {
     const initialFormState = {
         id: null, name: '', description: '', station_id: stations.length > 0 ? stations[0].id : '', 

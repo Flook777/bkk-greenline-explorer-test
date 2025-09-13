@@ -7,6 +7,10 @@ const { Server } = require("socket.io");
 const multer = require('multer');
 const fs = require('fs');
 
+// --- **จุดที่แก้ไข** ---
+// เราจะ comment บรรทัดนี้ออกไป เพื่อไม่ให้มีการลบและสร้างข้อมูลใหม่ทุกครั้ง
+// const seedDatabase = require('./seed'); 
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -22,12 +26,10 @@ const PORT = process.env.PORT || 3001;
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadPath = path.join(__dirname, 'public/images');
-        // Create directory if it doesn't exist
         fs.mkdirSync(uploadPath, { recursive: true });
         cb(null, uploadPath);
     },
     filename: function (req, file, cb) {
-        // Create a unique filename to avoid overwriting
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
     }
@@ -40,6 +42,8 @@ const db = new sqlite3.Database('./bts_explorer.db', (err) => {
         console.error(err.message);
     }
     console.log('Connected to the bts_explorer database.');
+    // **จุดที่แก้ไข:** comment บรรทัดนี้ออก
+    // seedDatabase(db); 
 });
 
 app.use(cors());
@@ -64,18 +68,14 @@ const safeJsonParse = (data, fallback = null) => {
 
 // --- API ENDPOINTS ---
 
-// POST /api/upload - **Endpoint ใหม่สำหรับอัปโหลดรูปภาพ**
 app.post('/api/upload', upload.single('placeImage'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded.' });
     }
-    // Return the URL of the uploaded file
     const imageUrl = `http://localhost:${PORT}/images/${req.file.filename}`;
     res.json({ imageUrl });
 });
 
-
-// GET /api/places - ดึงข้อมูลสถานที่ทั้งหมดสำหรับ Admin
 app.get('/api/places', (req, res) => {
     db.all("SELECT * FROM places ORDER BY name", [], (err, rows) => {
         if (err) {
@@ -85,8 +85,6 @@ app.get('/api/places', (req, res) => {
     });
 });
 
-
-// POST /api/places/add - เพิ่มสถานที่ใหม่
 app.post('/api/places/add', (req, res) => {
     const {
         name, description, station_id, category, latitude, longitude, image,
@@ -115,7 +113,6 @@ app.post('/api/places/add', (req, res) => {
     });
 });
 
-// PUT /api/places/:id - แก้ไขข้อมูลสถานที่
 app.put('/api/places/:id', (req, res) => {
     const { id } = req.params;
     const {
@@ -146,8 +143,6 @@ app.put('/api/places/:id', (req, res) => {
     });
 });
 
-
-// DELETE /api/places/:id - ลบสถานที่
 app.delete('/api/places/:id', (req, res) => {
     const { id } = req.params;
     db.run('DELETE FROM places WHERE id = ?', id, function(err) {
@@ -159,8 +154,6 @@ app.delete('/api/places/:id', (req, res) => {
     });
 });
 
-
-// GET /api/stations - ดึงสถานีทั้งหมด
 app.get('/api/stations', (req, res) => {
     db.all("SELECT * FROM stations", [], (err, rows) => {
         if (err) {
@@ -181,15 +174,19 @@ app.get('/api/stations', (req, res) => {
     });
 });
 
-// GET /api/places/:station_id - ดึงข้อมูลสถานที่ตามสถานีสำหรับหน้าแอปหลัก
 app.get('/api/places/:station_id', (req, res) => {
     const stationId = req.params.station_id;
-    // --- **จุดที่แก้ไข:** แก้ไขคำสั่ง SQL ให้มีความเสถียรมากขึ้น ---
     const sql = `
       SELECT 
         p.*, 
         (SELECT AVG(r.rating) FROM reviews r WHERE r.place_id = p.id) as average_rating, 
-        (SELECT COUNT(r.id) FROM reviews r WHERE r.place_id = p.id) as review_count
+        (SELECT COUNT(r.id) FROM reviews r WHERE r.place_id = p.id) as review_count,
+        (
+            SELECT json_group_array(json_object('user', rev.user, 'rating', rev.rating, 'comment', rev.comment))
+            FROM reviews rev
+            WHERE rev.place_id = p.id
+            ORDER BY rev.id DESC
+        ) as reviews
       FROM places p
       WHERE p.station_id = ?
     `;
@@ -203,6 +200,7 @@ app.get('/api/places/:station_id', (req, res) => {
         
         const processedRows = rows.map(row => ({
             ...row,
+            reviews: safeJsonParse(row.reviews, []),
             gallery: safeJsonParse(row.gallery, []),
             location: safeJsonParse(row.location, null),
             contact: safeJsonParse(row.contact, {}),
@@ -213,8 +211,6 @@ app.get('/api/places/:station_id', (req, res) => {
     });
 });
 
-
-// POST /api/places/:placeId/reviews - เพิ่มรีวิว
 app.post('/api/places/:placeId/reviews', (req, res) => {
     const placeId = req.params.placeId;
     const { user, rating, comment } = req.body;
@@ -250,7 +246,6 @@ app.post('/api/places/:placeId/reviews', (req, res) => {
     });
 });
 
-// --- Socket.IO Logic ---
 io.on('connection', (socket) => {
     console.log('a user connected');
     socket.on('disconnect', () => {
@@ -258,7 +253,6 @@ io.on('connection', (socket) => {
     });
 });
 
-// --- Start Server ---
 server.listen(PORT, () => {
     console.log(`Server with Socket.IO listening on ${PORT}`);
 });
