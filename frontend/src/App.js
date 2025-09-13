@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios'; // ใช้ axios เพื่อการเรียก API ที่ง่ายขึ้น
 import io from 'socket.io-client'; // Import library สำหรับ Real-time
+import AdminPanel from './AdminPanel.jsx'; // แก้ไขนามสกุลไฟล์เป็น .jsx
 
 // --- 1. การตั้งค่าเริ่มต้น ---
 const API_URL = 'http://localhost:3001/api';
@@ -27,6 +28,12 @@ const GlobalStyles = () => {
 
 // --- 2. Main App Component ---
 export default function App() {
+
+    // --- ตรวจสอบ URL เพื่อเลือกว่าจะแสดงหน้าไหน ---
+  if (window.location.pathname === '/admin') {
+    return <AdminPanel />;
+  }
+  
   // --- State Management ---
   const [stations, setStations] = useState([]);
   const [places, setPlaces] = useState([]);
@@ -118,7 +125,7 @@ export default function App() {
             alert("เกิดข้อผิดพลาดในการส่งรีวิว");
         });
   };
-        // --- 🎲 ฟังก์ชันสุ่มสถานที่ (เวอร์ชันสุ่มได้เสมอ) ---
+      // --- 🎲 ฟังก์ชันสุ่มสถานที่ (เวอร์ชันสุ่มได้เสมอ) ---
   const handleRandomPlace = () => {
     // ตรวจสอบแค่ว่ามีสถานที่ในรายการหรือไม่ (ป้องกัน Error)
     if (filteredPlaces.length === 0) {
@@ -151,22 +158,23 @@ export default function App() {
         {/* Header and Search Bar */}
         <header className="sticky top-0 z-30 w-full p-4 glass-card flex-shrink-0">
            <div className="flex items-center justify-between max-w-7xl mx-auto">
-            <div className="flex items-center space-x-3">
-              <svg className="h-10 w-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-              <span className="text-2xl font-bold text-white">BKK Green Line Explorer</span>
-            </div>
-            <div className="relative flex-1 max-w-xl mx-4">
-              <input type="text" placeholder="ค้นหาสถานที่ในสถานีนี้..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg></div>
-            </div>
-            <div> <button 
-                onClick={handleRandomPlace} 
-                title="สุ่มสถานที่" 
-                className="p-2 text-2xl rounded-full hover:bg-gray-700 transition-colors">
-                  🎲
-              </button></div>
-          </div>
-        </header>
+             <div className="flex items-center space-x-3">
+               <svg className="h-10 w-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+               <span className="text-2xl font-bold text-white">BKK Green Line Explorer</span>
+             </div>
+             <div className="relative flex-1 max-w-xl mx-4">
+               <input type="text" placeholder="ค้นหาสถานที่ในสถานีนี้..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none" />
+               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg></div>
+             </div>
+             <a href="/admin" className="text-white hover:text-emerald-400 transition-colors">Admin Panel</a>
+             <div> <button 
+                  onClick={handleRandomPlace} 
+                  title="สุ่มสถานที่" 
+                  className="p-2 text-2xl rounded-full hover:bg-gray-700 transition-colors">
+                    🎲
+                  </button></div>
+           </div>
+         </header>
 
         {/* Main Content Area */}
         <div className="flex-1 flex max-w-7xl w-full mx-auto overflow-y-hidden">
@@ -287,11 +295,11 @@ function PlaceDetail({ place, onBack, onReviewSubmit }) {
       <div className="glass-card rounded-lg shadow-xl overflow-hidden">
         {/* Image Gallery */}
         <div className="p-4">
-            {/* --- 🖼️ จุดที่แก้ไข 1 --- */}
-<img src={mainImage} alt={place.name} className="w-full h-72 object-fill rounded-lg shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/800x600/2d3748/ffffff?text=Image+Not+Found'; }}/>
+            <img src={mainImage} alt={place.name} className="w-full h-72 object-fill rounded-lg shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src='https://placehold.co/800x600/2d3748/ffffff?text=Image+Not+Found'; }}/>
             <div className="flex gap-2 mt-2 justify-center">
-                {place.gallery?.map((imgUrl, index) => (
-                    // --- 🖼️ จุดที่แก้ไข 2 ---
+                {/* --- 🖼️ **จุดที่แก้ไข** --- */}
+                {/* เพิ่ม (place.gallery || []) เพื่อป้องกัน error หาก gallery เป็น null */}
+                {(place.gallery || []).map((imgUrl, index) => (
                     <img key={index} src={imgUrl} alt={`${place.name} thumbnail ${index + 1}`} className="w-20 h-16 object-fill rounded-md cursor-pointer border-2 border-transparent hover:border-emerald-400" onClick={() => setMainImage(imgUrl)} />
                 ))}
             </div>
@@ -368,3 +376,4 @@ function PlaceDetail({ place, onBack, onReviewSubmit }) {
     </div>
   );
 }
+
