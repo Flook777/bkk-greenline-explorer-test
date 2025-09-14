@@ -373,7 +373,7 @@ function PlaceForm({ place, onSave, onCancel, isAdding, stations, showNotificati
                     <textarea name="description" id="description" value={formData.description || ''} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" rows="3"></textarea>
                 </div>
                 <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="travelInfo">Travel Info</label>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="travelInfo">Travel Info(ข้อมูลการเดินทาง)</label>
                     <textarea name="travelInfo" id="travelInfo" value={formData.travelInfo || ''} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" rows="2"></textarea>
                 </div>
 

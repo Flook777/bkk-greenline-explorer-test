@@ -1,32 +1,29 @@
-[
-  {
-    "station_id": "N8",
-    "name": "สวนจตุจักร",
-    "category": "สวนสาธารณะและตลาดนัด",
-    "description": "ตลาดนัดสุดสัปดาห์ที่ใหญ่ที่สุดในโลกและสวนสาธารณะสำหรับพักผ่อนและออกกำลังกายใจกลางกรุง",
-    "image": "http://localhost:3001/images/jatujak1.webp",
-    "gallery": "[\"http://localhost:3001/images/jatujak1.webp\",\"http://localhost:3001/images/jatujak2.webp\",\"http://localhost:3001/images/jatujak3.webp\"]",
-    "openingHours": "ตลาดนัด: ส.-อา. 09:00-18:00, สวน: ทุกวัน 05:00-21:00",
-    "travelInfo": "ลงรถไฟฟ้า BTS สถานีหมอชิต ใช้ทางออกหมายเลข 1 หรือ 3",
-    "phone": "02-272-4440",
-    "contact": "{\"Website\":\"https://www.chatuchakmarket.org/\",\"Facebook\":\"https://www.facebook.com/ChatuchakMarket/\"}",
-    "location": "{\"lat\":13.8016,\"lng\":100.5501}",
-    "events": "[{\"date\":\"ทุกวันเสาร์-อาทิตย์\",\"title\":\"ตลาดนัดจตุจักร\"}]",
-    "reviews": "[]"
-  },
-  {
-    "station_id": "N24",
-    "name": "Mighty Fitness",
-    "category": "ศูนย์ออกกำลังกาย",
-    "description": "Mighty Fitness ยิมทันสมัยใจกลางเมือง ครบครันด้วยเครื่องออกกำลังกายชั้นนำระดับโลก พื้นที่กว้างขวาง สะอาด ปลอดภัย พร้อมสร้างแรงบันดาลใจให้คุณบรรลุทุกเป้าหมายการออกกำลังกาย",
-    "image": "http://localhost:3001/images/Mighty Fitness kk.jpg",
-    "gallery": "[\"http://localhost:3001/images/Mighty Fitness kk.jpg\",\"http://localhost:3001/images/Mighty Fitness kk1.jpg\",\"http://localhost:3001/images/Mighty Fitness kk2.jpg\",\"http://localhost:3001/images/Mighty Fitness kk3.jpg\"]",
-    "openingHours": "ทุกวัน 8:00–22:00",   
-    "travelInfo": "ลงรถไฟฟ้า BTS สถานีคูคต เดินไปขึ้นรถขนส่งสาธารณะ สาย 1-25 (543) ลำลูกกา คลอง 7 ลงที่หน้าหมู่บ้านคัทลียาวิลล์ และเดินอีก 350 เมตร ประมาณ 5นาที",
-    "phone": "084-205-2444",
-    "contact": "{\"Facebook\":\"https://www.facebook.com/Mightyfitness49/\"}",
-    "location": "{\"lat\":13.9350123,\"lng\":100.6756938}",
-    "events": "[{\"date\":\"โปรโมชั่นประจำเดือนสิงหาคม\",\"title\":\"ทดลองใช้ฟรี 2 ครั้ง , มาเป็นคู่รับ Gift Voucher 200 บาท ฟรี!1!!\"}]",
-    "reviews": "[]"
-  }
-]
+{
+  "stations": [
+    { "id": "N24", "name": "คูคต" },
+    { "id": "N23", "name": "แยก คปอ." },
+    { "id": "N22", "name": "พิพิธภัณฑ์กองทัพอากาศ" },
+    { "id": "N21", "name": "โรงพยาบาลภูมิพลอดุลยเดช" },
+    { "id": "N20", "name": "สะพานใหม่" },
+    { "id": "N19", "name": "สายหยุด" },
+    { "id": "N18", "name": "พหลโยธิน 59" },
+    { "id": "N17", "name": "วัดพระศรีมหาธาตุ" },
+    { "id": "N16", "name": "กรมทหารราบที่ 11" },
+    { "id": "N15", "name": "บางบัว" },
+    { "id": "N14", "name": "กรมป่าไม้" },
+    { "id": "N13", "name": "มหาวิทยาลัยเกษตรศาสตร์" },
+    { "id": "N12", "name": "เสนานิคม" },
+    { "id": "N11", "name": "รัชโยธิน" },
+    { "id": "N10", "name": "พหลโยธิน 24" },
+    { "id": "N9", "name": "ห้าแยกลาดพร้าว" },
+    { "id": "N8", "name": "หมอชิต" },
+    { "id": "N7", "name": "สะพานควาย" },
+    { "id": "N5", "name": "อารีย์" },
+    { "id": "N4", "name": "สนามเป้า" },
+    { "id": "N3", "name": "อนุสาวรีย์ชัยสมรภูมิ" },
+    { "id": "N2", "name": "พญาไท" }
+  ],
+  "places": [
+    
+  ]
+}

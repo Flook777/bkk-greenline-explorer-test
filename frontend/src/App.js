@@ -25,7 +25,7 @@ const GlobalStyles = () => {
   return null;
 };
 
-// --- Main Application Component ---
+// --- Main Application Component (หน้าที่แสดงผลหลัก) ---
 function MainApp() {
   const [stations, setStations] = useState([]);
   const [places, setPlaces] = useState([]);
@@ -33,10 +33,8 @@ function MainApp() {
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  
   const mainContentRef = useRef(null);
 
-  // Fetch station data on initial load
   useEffect(() => {
     axios.get(`${API_URL}/stations`)
       .then(res => {
@@ -48,24 +46,16 @@ function MainApp() {
       .catch(error => console.error("Error fetching stations:", error));
   }, []);
 
-  // Fetch places when active station changes
   useEffect(() => {
     if (!activeStationId) return;
     setIsLoading(true);
     setPlaces([]);
     axios.get(`${API_URL}/places/${activeStationId}`)
-      .then(res => {
-        setPlaces(res.data.data);
-      })
-      .catch(error => {
-        console.error(`Error fetching places for station ${activeStationId}:`, error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+      .then(res => setPlaces(res.data.data))
+      .catch(error => console.error(`Error fetching places for station ${activeStationId}:`, error))
+      .finally(() => setIsLoading(false));
   }, [activeStationId]);
 
-  // Set up socket listener for real-time updates
   useEffect(() => {
     const handleReviewUpdate = (updatedPlace) => {
         console.log('📢 Real-time update received:', updatedPlace);
@@ -76,12 +66,8 @@ function MainApp() {
             currentSelected?.id === updatedPlace.id ? updatedPlace : currentSelected
         );
     };
-
     socket.on('review_updated', handleReviewUpdate);
-
-    return () => {
-        socket.off('review_updated', handleReviewUpdate);
-    };
+    return () => socket.off('review_updated', handleReviewUpdate);
   }, []);
 
   const handleStationClick = (stationId) => {
@@ -96,15 +82,10 @@ function MainApp() {
     mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleBackToList = () => {
-    setSelectedPlace(null);
-  };
+  const handleBackToList = () => setSelectedPlace(null);
   
   const handleReviewSubmit = (placeId, reviewData) => {
       axios.post(`${API_URL}/places/${placeId}/reviews`, reviewData)
-        .then(response => {
-            console.log(response.data.message);
-        })
         .catch(error => {
             console.error("Error submitting review:", error);
             alert("เกิดข้อผิดพลาดในการส่งรีวิว");
@@ -142,31 +123,17 @@ function MainApp() {
                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg></div>
                  </div>
                  <button onClick={handleRandomPlace} title="สุ่มสถานที่" className="p-2 text-2xl rounded-full hover:bg-gray-700 transition-colors">🎲</button>
-                 <a href="/admin" className="text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-full text-sm font-semibold transition-colors">Admin Panel</a>
+                 {/* **จุดที่แก้ไข:** ลบปุ่ม Admin Panel ออกจากส่วนนี้ */}
              </div>
            </div>
          </header>
-
         <div className="flex-1 flex max-w-7xl w-full mx-auto overflow-y-hidden">
-          <StationList 
-            stations={stations}
-            activeStationId={activeStationId}
-            onStationClick={handleStationClick}
-          />
+          <StationList stations={stations} activeStationId={activeStationId} onStationClick={handleStationClick} />
           <main ref={mainContentRef} className="flex-1 p-4 md:p-8 overflow-y-auto">
             {selectedPlace ? (
-              <PlaceDetail 
-                place={selectedPlace} 
-                onBack={handleBackToList}
-                onReviewSubmit={handleReviewSubmit}
-              />
+              <PlaceDetail place={selectedPlace} onBack={handleBackToList} onReviewSubmit={handleReviewSubmit} />
             ) : (
-              <PlacesList 
-                station={activeStation} 
-                places={filteredPlaces} 
-                onSelectPlace={handleSelectPlace}
-                isLoading={isLoading}
-              />
+              <PlacesList station={activeStation} places={filteredPlaces} onSelectPlace={handleSelectPlace} isLoading={isLoading} />
             )}
           </main>
         </div>
@@ -175,29 +142,19 @@ function MainApp() {
   );
 }
 
-// --- App Router ---
+// --- App Router (หน้าที่เลือกว่าจะแสดงหน้าหลัก หรือหน้า Admin) ---
 export default function App() {
   const [route, setRoute] = useState(window.location.pathname);
 
   useEffect(() => {
-    const onLocationChange = () => {
-      setRoute(window.location.pathname);
-    };
-
-    const handleLinkClick = (e) => {
-      if (e.target.tagName === 'A' && e.target.href && e.target.host === window.location.host) {
-        e.preventDefault();
-        window.history.pushState({}, '', e.target.href);
-        onLocationChange();
-      }
-    };
+    const onLocationChange = () => setRoute(window.location.pathname);
     
+    // **แก้ไข:** เปลี่ยนจากการดักจับ 'click' ทั้งหน้า มาเป็นการใช้ 'popstate' เพียงอย่างเดียว
+    // เพื่อให้การทำงานของลิงก์ปกติไม่ถูกรบกวน
     window.addEventListener('popstate', onLocationChange);
-    window.addEventListener('click', handleLinkClick);
 
     return () => {
       window.removeEventListener('popstate', onLocationChange);
-      window.removeEventListener('click', handleLinkClick);
     };
   }, []);
 
@@ -208,22 +165,22 @@ export default function App() {
   return <MainApp />;
 }
 
-// --- Child Components ---
 
+// --- Child Components ---
 function StationList({ stations, activeStationId, onStationClick }) {
-  return (
-    <aside className="w-full md:w-80 p-6 md:my-4 md:ml-4 md:rounded-2xl glass-card flex-col flex-shrink-0 hidden md:flex">
-      <h2 className="text-xl font-bold text-center mb-6 text-white flex-shrink-0">สถานี BTS สายสีเขียว</h2>
-      <div className="relative station-list-container space-y-4 overflow-y-auto pr-2 flex-1">
-        {stations.map(station => (
-          <div key={station.id} className={`station-item flex items-center cursor-pointer relative z-10 p-2 rounded-lg ${station.id === activeStationId ? 'active' : ''}`} onClick={() => onStationClick(station.id)}>
-            <div className="station-icon w-12 h-12 rounded-full bg-black/20 flex items-center justify-center mr-4 border-2 border-white/20 flex-shrink-0"><svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.789-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-1.026.977-2.19.977-3.434 0-3.517-1.009-6.789-2.753-9.571M12 11V9m0 2H8m4 0h2" /></svg></div>
-            <span className="station-name text-lg text-gray-300">{station.name} ({station.id})</span>
-          </div>
-        ))}
-      </div>
-    </aside>
-  );
+    return (
+        <aside className="w-full md:w-80 p-6 md:my-4 md:ml-4 md:rounded-2xl glass-card flex-col flex-shrink-0 hidden md:flex">
+            <h2 className="text-xl font-bold text-center mb-6 text-white flex-shrink-0">สถานี BTS สายสีเขียว</h2>
+            <div className="relative station-list-container space-y-4 overflow-y-auto pr-2 flex-1">
+                {stations.map(station => (
+                    <div key={station.id} className={`station-item flex items-center cursor-pointer relative z-10 p-2 rounded-lg ${station.id === activeStationId ? 'active' : ''}`} onClick={() => onStationClick(station.id)}>
+                        <div className="station-icon w-12 h-12 rounded-full bg-black/20 flex items-center justify-center mr-4 border-2 border-white/20 flex-shrink-0"><svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c0 3.517-1.009 6.789-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-1.026.977-2.19.977-3.434 0-3.517-1.009-6.789-2.753-9.571M12 11V9m0 2H8m4 0h2" /></svg></div>
+                        <span className="station-name text-lg text-gray-300">{station.name} ({station.id})</span>
+                    </div>
+                ))}
+            </div>
+        </aside>
+    );
 }
 
 function PlacesList({ station, places, onSelectPlace, isLoading }) {
@@ -268,8 +225,7 @@ function PlaceDetail({ place, onBack, onReviewSubmit }) {
 
   const handleSubmitReview = () => {
     if (currentRating > 0 && reviewComment.trim() !== '') {
-      const newReview = { user: "ผู้เยี่ยมชม", rating: currentRating, comment: reviewComment };
-      onReviewSubmit(place.id, newReview);
+      onReviewSubmit(place.id, { user: "ผู้เยี่ยมชม", rating: currentRating, comment: reviewComment });
       alert('ขอบคุณสำหรับรีวิวของคุณ! ข้อมูลจะอัปเดตทันที');
       setCurrentRating(0);
       setReviewComment('');

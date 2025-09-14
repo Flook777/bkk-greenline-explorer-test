@@ -7,9 +7,9 @@ const { Server } = require("socket.io");
 const multer = require('multer');
 const fs = require('fs');
 
-// --- **จุดที่แก้ไข** ---
-// เราจะ comment บรรทัดนี้ออกไป เพื่อไม่ให้มีการลบและสร้างข้อมูลใหม่ทุกครั้ง
-// const seedDatabase = require('./seed'); 
+// --- **จุดที่แก้ไข 1** ---
+// เปิดการใช้งาน seedDatabase ชั่วคราวเพื่อสร้างฐานข้อมูลใหม่
+ // const seedDatabase = require('./seed'); 
 
 const app = express();
 const server = http.createServer(app);
@@ -42,8 +42,8 @@ const db = new sqlite3.Database('./bts_explorer.db', (err) => {
         console.error(err.message);
     }
     console.log('Connected to the bts_explorer database.');
-    // **จุดที่แก้ไข:** comment บรรทัดนี้ออก
-    // seedDatabase(db); 
+    // **จุดที่แก้ไข 2:** เปิดการใช้งาน seedDatabase
+ //  seedDatabase(db); 
 });
 
 app.use(cors());
