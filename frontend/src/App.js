@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
-import AdminPanel from './AdminPanel.jsx'; // ตรวจสอบว่าไฟล์นี้มีอยู่จริง
+
+// Import หน้า Page หลักๆ
+import AdminPanel from './pages/AdminPanel.jsx';
+import EventCalendar from './pages/EventCalendar.jsx';
 
 // --- Configuration ---
 const API_URL = 'http://localhost:3001/api';
@@ -58,7 +61,6 @@ function MainApp() {
 
   useEffect(() => {
     const handleReviewUpdate = (updatedPlace) => {
-        console.log('📢 Real-time update received:', updatedPlace);
         setPlaces(currentPlaces => 
             currentPlaces.map(p => p.id === updatedPlace.id ? updatedPlace : p)
         );
@@ -113,17 +115,17 @@ function MainApp() {
       <div className="h-screen w-full flex flex-col bg-gray-900">
         <header className="sticky top-0 z-30 w-full p-4 glass-card flex-shrink-0">
            <div className="flex items-center justify-between max-w-7xl mx-auto">
-             <div className="flex items-center space-x-3">
+             <a href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
                <svg className="h-10 w-10 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
                <span className="text-2xl font-bold text-white">BKK Green Line Explorer</span>
-             </div>
+             </a>
              <div className="flex items-center space-x-4">
-                <div className="relative flex-1 max-w-md">
-                   <input type="text" placeholder="ค้นหาสถานที่ในสถานีนี้..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} disabled={!!selectedPlace} className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-50" />
+                <a href="/events" className="text-white hover:text-emerald-400 font-semibold transition-colors">Event Calendar</a>
+                <div className="relative flex-1 max-w-xs">
+                   <input type="text" placeholder="ค้นหาสถานที่..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} disabled={!!selectedPlace} className="w-full py-2 pl-10 pr-4 rounded-full bg-gray-800 text-white border border-gray-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none disabled:opacity-50" />
                    <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none"><svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg></div>
                  </div>
                  <button onClick={handleRandomPlace} title="สุ่มสถานที่" className="p-2 text-2xl rounded-full hover:bg-gray-700 transition-colors">🎲</button>
-                 {/* **จุดที่แก้ไข:** ลบปุ่ม Admin Panel ออกจากส่วนนี้ */}
              </div>
            </div>
          </header>
@@ -142,24 +144,36 @@ function MainApp() {
   );
 }
 
-// --- App Router (หน้าที่เลือกว่าจะแสดงหน้าหลัก หรือหน้า Admin) ---
+// --- App Router (หน้าที่เลือกว่าจะแสดงหน้าไหน) ---
 export default function App() {
   const [route, setRoute] = useState(window.location.pathname);
 
   useEffect(() => {
     const onLocationChange = () => setRoute(window.location.pathname);
     
-    // **แก้ไข:** เปลี่ยนจากการดักจับ 'click' ทั้งหน้า มาเป็นการใช้ 'popstate' เพียงอย่างเดียว
-    // เพื่อให้การทำงานของลิงก์ปกติไม่ถูกรบกวน
+    const handleLinkClick = (e) => {
+      const anchor = e.target.closest('a');
+      if (anchor && anchor.href && anchor.host === window.location.host) {
+        e.preventDefault();
+        window.history.pushState({}, '', anchor.href);
+        onLocationChange();
+      }
+    };
+    
     window.addEventListener('popstate', onLocationChange);
+    document.addEventListener('click', handleLinkClick);
 
     return () => {
       window.removeEventListener('popstate', onLocationChange);
+      document.removeEventListener('click', handleLinkClick);
     };
   }, []);
 
   if (route === '/admin') {
     return <AdminPanel />;
+  }
+  if (route === '/events') {
+    return <EventCalendar />;
   }
   
   return <MainApp />;
@@ -281,12 +295,6 @@ function PlaceDetail({ place, onBack, onReviewSubmit }) {
                             กดเพื่อนำทาง
                         </a>
                     }
-                </div>
-            </div>
-            <div className="mb-8">
-                <h4 className="text-xl font-semibold mb-3 text-emerald-400">📅 ปฏิทินกิจกรรม</h4>
-                <div className="space-y-2 text-gray-300 bg-black/20 p-4 rounded-lg">
-                    {(place.events || []).length > 0 ? place.events.map((event, i) => <p key={i}><strong className="text-gray-100">{event.date}:</strong> {event.title}</p>) : <p>ไม่มีกิจกรรมที่กำลังจะเกิดขึ้นในเร็วๆ นี้</p>}
                 </div>
             </div>
             <div>

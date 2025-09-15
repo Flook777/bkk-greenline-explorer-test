@@ -7,10 +7,10 @@ function seedDatabase(db) {
 
   db.serialize(() => {
     // Drop existing tables to start fresh
-    db.run(`DROP TABLE IF EXISTS stations`);
-    db.run(`DROP TABLE IF EXISTS places`);
-    // **จุดที่แก้ไข:** เพิ่มการลบตาราง reviews เดิม (ถ้ามี)
+    db.run(`DROP TABLE IF EXISTS events`);
     db.run(`DROP TABLE IF EXISTS reviews`);
+    db.run(`DROP TABLE IF EXISTS places`);
+    db.run(`DROP TABLE IF EXISTS stations`);
 
     // Create tables
     db.run(`CREATE TABLE stations (
@@ -31,11 +31,9 @@ function seedDatabase(db) {
         phone TEXT,
         contact TEXT,
         location TEXT,
-        events TEXT,
         FOREIGN KEY (station_id) REFERENCES stations (id)
     )`);
 
-    // **จุดที่แก้ไข:** เพิ่มการสร้างตาราง reviews ที่ขาดหายไป
     db.run(`CREATE TABLE reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         place_id INTEGER,
@@ -43,6 +41,16 @@ function seedDatabase(db) {
         rating INTEGER,
         comment TEXT,
         FOREIGN KEY (place_id) REFERENCES places (id)
+    )`);
+
+    // สร้างตาราง events ที่ถูกต้อง
+    db.run(`CREATE TABLE events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        place_id INTEGER NOT NULL,
+        event_date TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        FOREIGN KEY (place_id) REFERENCES places (id) ON DELETE CASCADE
     )`);
 
     // Insert data
@@ -54,14 +62,14 @@ function seedDatabase(db) {
 
     const placeStmt = db.prepare(`INSERT INTO places (
         station_id, name, category, description, image, gallery, 
-        openingHours, travelInfo, phone, contact, location, events
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    data.places.forEach(place => {
+        openingHours, travelInfo, phone, contact, location
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+    (data.places || []).forEach(place => {
         placeStmt.run(
             place.station_id, place.name, place.category, place.description,
             place.image, JSON.stringify(place.gallery), place.openingHours,
             place.travelInfo, place.phone, JSON.stringify(place.contact),
-            JSON.stringify(place.location), JSON.stringify(place.events)
+            JSON.stringify(place.location)
         );
     });
     placeStmt.finalize();
@@ -71,3 +79,4 @@ function seedDatabase(db) {
 }
 
 module.exports = seedDatabase;
+
