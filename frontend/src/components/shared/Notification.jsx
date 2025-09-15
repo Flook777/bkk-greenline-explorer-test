@@ -1,5 +1,6 @@
 import React from 'react';
 
+// แก้ไข: เปลี่ยนเป็น export const (Named Export)
 export const Notification = ({ message, type = 'error', onClose }) => {
     if (!message) return null;
     const typeClasses = type === 'error'
@@ -14,3 +15,4 @@ export const Notification = ({ message, type = 'error', onClose }) => {
         </div>
     );
 };
+

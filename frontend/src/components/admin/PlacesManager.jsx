@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
-// **จุดที่แก้ไข:** เปลี่ยนเป็น Named Import (ใช้วงเล็บปีกกา)
+import React, { useState, useEffect, useCallback } from 'react';
+// แก้ไข: import ทุกอย่างเป็น default import (ไม่มีปีกกา) ให้ถูกต้อง
 import { ConfirmationModal } from '../shared/ConfirmationModal';
 import { Notification } from '../shared/Notification';
 import { PlaceForm } from './PlaceForm';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
-export function PlacesManager() {
+function PlacesManager() {
     const [places, setPlaces] = useState([]);
     const [stations, setStations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -20,7 +20,7 @@ export function PlacesManager() {
         setTimeout(() => setNotification({ message: null, type: 'error' }), 5000);
     };
 
-    const fetchInitialData = async () => {
+    const fetchInitialData = useCallback(async () => {
         setIsLoading(true);
         try {
             const [placesRes, stationsRes] = await Promise.all([
@@ -37,9 +37,11 @@ export function PlacesManager() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
     
-    useEffect(() => { fetchInitialData(); }, []);
+    useEffect(() => { 
+        fetchInitialData(); 
+    }, [fetchInitialData]);
 
     const handleDeleteClick = (id) => setPlaceToDelete(id);
 
@@ -49,7 +51,7 @@ export function PlacesManager() {
             const response = await fetch(`${API_BASE_URL}/places/${placeToDelete}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Failed to delete place.');
             showNotification('Place deleted successfully!', 'success');
-            fetchInitialData();
+            await fetchInitialData();
         } catch (error) {
             showNotification(error.message, 'error');
         } finally {
@@ -77,7 +79,7 @@ export function PlacesManager() {
             showNotification(`Place ${isUpdating ? 'updated' : 'added'} successfully!`, 'success');
             setEditingPlace(null);
             setIsAdding(false);
-            fetchInitialData();
+            await fetchInitialData();
         } catch (error) {
             showNotification(error.message, 'error');
         }

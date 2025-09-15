@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-// **จุดที่แก้ไข:** เปลี่ยนเป็น Named Import (ใช้วงเล็บปีกกา)
+import React, { useState, useEffect, useCallback } from 'react';
+// แก้ไข: import ให้เป็น named import ทั้งหมด
 import { ConfirmationModal } from '../shared/ConfirmationModal';
 import { Notification } from '../shared/Notification';
-import { EventForm } from './EventForm';
+import  EventForm  from './EventForm';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
-// **จุดที่แก้ไข:** เปลี่ยนเป็น Default Export
 export default function EventsManager() {
     const [events, setEvents] = useState([]);
     const [places, setPlaces] = useState([]);
@@ -20,8 +19,9 @@ export default function EventsManager() {
         setNotification({ message, type });
         setTimeout(() => setNotification({ message: null, type: 'error' }), 5000);
     };
-
-    const fetchEventsAndPlaces = async () => {
+    
+    // แก้ไข: เพิ่ม useCallback และใส่ dependency ที่ถูกต้อง
+    const fetchEventsAndPlaces = useCallback(async () => {
         setIsLoading(true);
         try {
             const [eventsRes, placesRes] = await Promise.all([
@@ -40,11 +40,11 @@ export default function EventsManager() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         fetchEventsAndPlaces();
-    }, []);
+    }, [fetchEventsAndPlaces]);
 
     const handleDeleteClick = (id) => setEventToDelete(id);
     const confirmDelete = async () => {
@@ -53,7 +53,7 @@ export default function EventsManager() {
             const res = await fetch(`${API_BASE_URL}/events/${eventToDelete}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete event');
             showNotification('Event deleted successfully!', 'success');
-            fetchEventsAndPlaces();
+            await fetchEventsAndPlaces();
         } catch (error) {
             showNotification(error.message, 'error');
         } finally {
@@ -79,7 +79,7 @@ export default function EventsManager() {
             showNotification(`Event ${isUpdating ? 'updated' : 'added'} successfully!`, 'success');
             setIsAdding(false);
             setEditingEvent(null);
-            fetchEventsAndPlaces();
+            await fetchEventsAndPlaces();
         } catch (error) {
             showNotification(error.message, 'error');
         }
@@ -141,5 +141,4 @@ export default function EventsManager() {
         </div>
     );
 }
-
 

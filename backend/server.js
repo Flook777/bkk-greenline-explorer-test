@@ -8,7 +8,7 @@ const multer = require('multer');
 const fs = require('fs');
 
 // เปิดการใช้งาน seedDatabase ชั่วคราวเพื่อสร้างฐานข้อมูลใหม่
-// const seedDatabase = require('./seed'); 
+const seedDatabase = require('./seed'); 
 
 const app = express();
 const server = http.createServer(app);
@@ -42,7 +42,7 @@ const db = new sqlite3.Database('./bts_explorer.db', (err) => {
     }
     console.log('Connected to the bts_explorer database.');
     // เรียกใช้ seedDatabase เพื่อสร้างฐานข้อมูลใหม่
-  //  seedDatabase(db); 
+   seedDatabase(db); 
 });
 
 app.use(cors());

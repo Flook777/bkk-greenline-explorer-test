@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export function EventForm({ event, places, onSave, onCancel, isAdding }) {
-    // **จุดที่แก้ไข 1:** เริ่มต้น state ด้วยค่าว่างที่ปลอดภัย
+function EventForm({ event, places, onSave, onCancel, isAdding }) {
     const [formData, setFormData] = useState({
         place_id: '',
         event_date: '',
@@ -11,23 +10,21 @@ export function EventForm({ event, places, onSave, onCancel, isAdding }) {
 
     useEffect(() => {
         if (event) {
-            // เมื่อแก้ไข Event ที่มีอยู่แล้ว
             setFormData({
                 place_id: event.place_id,
-                event_date: event.event_date.split('T')[0], // จัดรูปแบบสำหรับ input type="date"
+                event_date: event.event_date.split('T')[0],
                 title: event.title,
                 description: event.description || ''
             });
         } else {
-            // **จุดที่แก้ไข 2:** เมื่อเพิ่ม Event ใหม่, จะรอให้ 'places' มีข้อมูลก่อนค่อยตั้งค่า default
             setFormData({
-                place_id: places.length > 0 ? places[0].id : '', // ตั้งค่า default เมื่อมีข้อมูลแล้ว
+                place_id: places.length > 0 ? places[0].id : '',
                 event_date: '',
                 title: '',
                 description: ''
             });
         }
-    }, [event, places, isAdding]); // ให้ effect นี้ทำงานเมื่อ props เหล่านี้เปลี่ยน
+    }, [event, places, isAdding]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -39,7 +36,6 @@ export function EventForm({ event, places, onSave, onCancel, isAdding }) {
         onSave({ id: event?.id, ...formData });
     };
 
-    // ป้องกันการแสดงผลฟอร์มถ้ายังไม่มีข้อมูลสถานที่ให้เลือก (สำหรับกรณี Add New)
     if (isAdding && places.length === 0) {
         return (
             <div className="bg-white shadow-lg rounded-lg p-6 mb-8 border border-gray-200">
@@ -79,4 +75,6 @@ export function EventForm({ event, places, onSave, onCancel, isAdding }) {
          </div>
     );
 }
+
+export default EventForm;
 
