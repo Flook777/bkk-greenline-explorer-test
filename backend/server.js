@@ -86,6 +86,16 @@ app.post('/api/upload-gallery', upload.array('galleryImages', 10), (req, res) =>
 app.get('/api/places', (req, res) => {
     db.all("SELECT * FROM places ORDER BY name", [], (err, rows) => {
         if (err) return res.status(400).json({ "error": err.message });
+
+         // --- เพิ่มส่วนนี้เข้าไป ---
+        const processedRows = rows.map(row => ({
+            ...row,
+            gallery: safeJsonParse(row.gallery, []), // แปลง gallery กลับเป็น Array
+            location: safeJsonParse(row.location, null), // แปลง location กลับเป็น Object
+            contact: safeJsonParse(row.contact, {}) // แปลง contact กลับเป็น Object
+        }));
+        // -----------------------
+
         res.json({ "message": "success", "data": rows });
     });
 });

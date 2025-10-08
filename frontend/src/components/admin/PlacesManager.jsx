@@ -88,9 +88,18 @@ function PlacesManager() {
     };
 
     const handleEdit = (place) => {
-        setEditingPlace(place);
-        setIsAdding(false);
+    // --- เพิ่มส่วนนี้เข้าไป ---
+    const placeWithParsedData = {
+        ...place,
+        gallery: Array.isArray(place.gallery) ? place.gallery : [],
+        contact: typeof place.contact === 'object' && place.contact !== null ? place.contact : {},
+        location: typeof place.location === 'object' && place.location !== null ? place.location : null,
     };
+    // -----------------------
+
+    setEditingPlace(placeWithParsedData); // ส่งข้อมูลที่แปลงแล้วเข้า State
+    setIsAdding(false);
+};
 
     const handleManageReviews = (place) => {
         setManagingReviewsFor(place);
