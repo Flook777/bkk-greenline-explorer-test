@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 // แก้ไข: import ทุกอย่างเป็น default import (ไม่มีปีกกา) ให้ถูกต้อง
-import { ConfirmationModal } from '../shared/ConfirmationModal';
-import { Notification } from '../shared/Notification';
-import { PlaceForm } from './PlaceForm';
+import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
+import { Notification } from '../shared/Notification.jsx';
+import { PlaceForm } from './PlaceForm.jsx';
+import ReviewsManager from './ReviewsManager.jsx';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
@@ -14,6 +15,7 @@ function PlacesManager() {
     const [editingPlace, setEditingPlace] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
     const [placeToDelete, setPlaceToDelete] = useState(null);
+    const [managingReviewsFor, setManagingReviewsFor] = useState(null);
 
     const showNotification = (message, type = 'error') => {
         setNotification({ message, type });
@@ -90,11 +92,24 @@ function PlacesManager() {
         setIsAdding(false);
     };
 
+    const handleManageReviews = (place) => {
+        setManagingReviewsFor(place);
+    };
+
     if (isLoading) return <p>Loading places...</p>;
 
     return (
         <div>
             {placeToDelete && <ConfirmationModal message="Are you sure you want to delete this place?" onConfirm={confirmDelete} onCancel={() => setPlaceToDelete(null)} />}
+            
+            {managingReviewsFor && (
+                <ReviewsManager
+                    place={managingReviewsFor}
+                    onClose={() => setManagingReviewsFor(null)}
+                    showNotification={showNotification}
+                />
+            )}
+
             <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: null, type: 'error' })} />
             
             <div className="flex justify-end mb-4">
@@ -128,8 +143,9 @@ function PlacesManager() {
                                 <td className="py-4 px-5">{place.name}</td>
                                 <td className="py-4 px-5">{place.station_id}</td>
                                 <td className="py-4 px-5">{place.category}</td>
-                                <td className="py-4 px-5 text-right">
-                                    <button onClick={() => handleEdit(place)} className="text-blue-600 hover:text-blue-900 mr-4 font-semibold">Edit</button>
+                                <td className="py-4 px-5 text-right space-x-2">
+                                    <button onClick={() => handleManageReviews(place)} className="text-green-600 hover:text-green-900 font-semibold">Reviews</button>
+                                    <button onClick={() => handleEdit(place)} className="text-blue-600 hover:text-blue-900 font-semibold">Edit</button>
                                     <button onClick={() => handleDeleteClick(place.id)} className="text-red-600 hover:text-red-900 font-semibold">Delete</button>
                                 </td>
                             </tr>

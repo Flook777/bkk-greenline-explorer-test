@@ -8,7 +8,7 @@ const multer = require('multer');
 const fs = require('fs');
 
 // เปิดการใช้งาน seedDatabase ชั่วคราวเพื่อสร้างฐานข้อมูลใหม่
-const seedDatabase = require('./seed'); 
+// const seedDatabase = require('./seed'); 
 
 const app = express();
 const server = http.createServer(app);
@@ -42,7 +42,7 @@ const db = new sqlite3.Database('./bts_explorer.db', (err) => {
     }
     console.log('Connected to the bts_explorer database.');
     // เรียกใช้ seedDatabase เพื่อสร้างฐานข้อมูลใหม่
-   seedDatabase(db); 
+ //  seedDatabase(db); 
 });
 
 app.use(cors());
@@ -63,7 +63,7 @@ const safeJsonParse = (data, fallback = null) => {
 
 // --- API ENDPOINTS ---
 
-// Image Upload
+// Image Upload (single for main image)
 app.post('/api/upload', upload.single('placeImage'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded.' });
@@ -71,6 +71,16 @@ app.post('/api/upload', upload.single('placeImage'), (req, res) => {
     const imageUrl = `http://localhost:${PORT}/images/${req.file.filename}`;
     res.json({ imageUrl });
 });
+
+// New endpoint for gallery uploads (multiple)
+app.post('/api/upload-gallery', upload.array('galleryImages', 10), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded.' });
+    }
+    const imageUrls = req.files.map(file => `http://localhost:${PORT}/images/${file.filename}`);
+    res.json({ imageUrls });
+});
+
 
 // --- Places CRUD ---
 app.get('/api/places', (req, res) => {
@@ -157,6 +167,24 @@ app.delete('/api/events/:id', (req, res) => {
     db.run('DELETE FROM events WHERE id = ?', id, function(err) {
         if (err) return res.status(400).json({ error: err.message });
         res.json({ message: 'Event deleted successfully', changes: this.changes });
+    });
+});
+
+// --- Reviews Management (New Endpoints) ---
+app.get('/api/reviews/place/:place_id', (req, res) => {
+    const { place_id } = req.params;
+    db.all("SELECT * FROM reviews WHERE place_id = ? ORDER BY id DESC", [place_id], (err, rows) => {
+        if (err) return res.status(400).json({ "error": err.message });
+        res.json({ "message": "success", "data": rows });
+    });
+});
+
+app.delete('/api/reviews/:id', (req, res) => {
+    const { id } = req.params;
+    db.run('DELETE FROM reviews WHERE id = ?', id, function(err) {
+        if (err) return res.status(400).json({ error: err.message });
+        if (this.changes === 0) return res.status(404).json({ message: 'Review not found' });
+        res.json({ message: 'Review deleted successfully', changes: this.changes });
     });
 });
 
