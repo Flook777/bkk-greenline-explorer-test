@@ -18,7 +18,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
     });
     const [googleMapsUrl, setGoogleMapsUrl] = useState('');
     const [contacts, setContacts] = useState([{ platform: '', url: '' }]);
-    const [gallery, setGallery] = useState(['']);
+    const [gallery, setGallery] = useState([]);
     const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
@@ -45,8 +45,9 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
             const placeContacts = place.contact ? Object.entries(place.contact).map(([platform, url]) => ({ platform, url })) : [];
             setContacts(placeContacts.length > 0 ? placeContacts : [{ platform: '', url: '' }]);
             
-            const placeGallery = place.gallery && place.gallery.length > 0 ? place.gallery : [''];
-            setGallery(placeGallery);
+            // Ensure gallery is always an array
+            const placeGallery = Array.isArray(place.gallery) ? place.gallery : [];
+            setGallery(placeGallery.length > 0 ? placeGallery : ['']);
 
         } else {
             // Reset for new place form
@@ -105,6 +106,30 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
             setIsUploading(false);
         }
     };
+    
+    const handleGalleryUpload = async (e) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const uploadData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            uploadData.append('galleryImages', files[i]);
+        }
+        
+        setIsUploading(true);
+        try {
+            const res = await axios.post(`${API_BASE_URL}/upload-gallery`, uploadData);
+            // Add new image URLs to the gallery, filtering out any previous empty strings
+            setGallery(prev => [...prev.filter(url => url && url.trim() !== ''), ...res.data.imageUrls]);
+            showNotification(`${files.length} image(s) uploaded successfully!`, 'success');
+        } catch (error) {
+            console.error('Gallery upload failed:', error);
+            showNotification('Gallery upload failed. Please try again.', 'error');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
 
     // --- Contact Handlers ---
     const handleContactChange = (index, field, value) => {
@@ -134,7 +159,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
             return acc;
         }, {});
 
-        const finalGallery = gallery.filter(url => url.trim() !== '');
+        const finalGallery = gallery.filter(url => url && url.trim() !== '');
 
         const submissionData = {
             ...formData,
@@ -221,13 +246,30 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 {/* --- Dynamic Gallery --- */}
                 <div>
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">Image Gallery</h3>
+                    
+                    <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gallery-upload">
+                            Upload Images
+                        </label>
+                        <input
+                            type="file"
+                            id="gallery-upload"
+                            multiple
+                            accept="image/*"
+                            onChange={handleGalleryUpload}
+                            className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                        />
+                         {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading gallery...</p>}
+                    </div>
+                    
+                    <h4 className="text-md font-semibold text-gray-600 mb-2">Or add by URL</h4>
                     {gallery.map((url, index) => (
                         <div key={index} className="flex items-center gap-2 mb-2">
                             <input type="url" value={url} onChange={(e) => handleGalleryChange(index, e.target.value)} placeholder="Image URL" className="flex-1 px-3 py-2 border rounded-lg"/>
                             <button type="button" onClick={() => removeGalleryField(index)} className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600">-</button>
                         </div>
                     ))}
-                    <button type="button" onClick={addGalleryField} className="bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600">+ Add Image</button>
+                    <button type="button" onClick={addGalleryField} className="bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600">+ Add Image URL</button>
                 </div>
 
                 {/* --- Action Buttons --- */}
