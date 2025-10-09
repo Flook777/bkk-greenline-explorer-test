@@ -32,7 +32,15 @@ function PlacesManager() {
             if (!placesRes.ok || !stationsRes.ok) throw new Error('Failed to fetch places or stations data');
             const placesData = await placesRes.json();
             const stationsData = await stationsRes.json();
-            setPlaces(placesData.data || []);
+            
+            const processedPlaces = (placesData.data || []).map(place => ({
+                ...place,
+                gallery: Array.isArray(place.gallery) ? place.gallery : (place.gallery ? JSON.parse(place.gallery) : []),
+                contact: typeof place.contact === 'object' ? place.contact : (place.contact ? JSON.parse(place.contact) : {}),
+                location: typeof place.location === 'object' ? place.location : (place.location ? JSON.parse(place.location) : null),
+            }));
+
+            setPlaces(processedPlaces);
             setStations(stationsData.data || []);
         } catch (error) {
             showNotification(error.message, 'error');
@@ -88,18 +96,16 @@ function PlacesManager() {
     };
 
     const handleEdit = (place) => {
-    // --- เพิ่มส่วนนี้เข้าไป ---
-    const placeWithParsedData = {
-        ...place,
-        gallery: Array.isArray(place.gallery) ? place.gallery : [],
-        contact: typeof place.contact === 'object' && place.contact !== null ? place.contact : {},
-        location: typeof place.location === 'object' && place.location !== null ? place.location : null,
+        const placeWithParsedData = {
+            ...place,
+            gallery: Array.isArray(place.gallery) ? place.gallery : [],
+            contact: typeof place.contact === 'object' && place.contact !== null ? place.contact : {},
+            location: typeof place.location === 'object' && place.location !== null ? place.location : null,
+        };
+        setEditingPlace(placeWithParsedData);
+        setIsAdding(false);
     };
-    // -----------------------
 
-    setEditingPlace(placeWithParsedData); // ส่งข้อมูลที่แปลงแล้วเข้า State
-    setIsAdding(false);
-};
 
     const handleManageReviews = (place) => {
         setManagingReviewsFor(place);
@@ -116,6 +122,7 @@ function PlacesManager() {
                     place={managingReviewsFor}
                     onClose={() => setManagingReviewsFor(null)}
                     showNotification={showNotification}
+                    onReviewChange={fetchInitialData} 
                 />
             )}
 
@@ -169,4 +176,3 @@ function PlacesManager() {
 }
 
 export default PlacesManager;
-

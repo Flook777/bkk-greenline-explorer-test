@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
 
 const API_BASE_URL = 'http://localhost:3001/api';
@@ -13,11 +12,16 @@ const ReviewsManager = ({ place, onClose, showNotification }) => {
         if (!place) return;
         setIsLoading(true);
         try {
-            const response = await axios.get(`${API_BASE_URL}/reviews/place/${place.id}`);
-            setReviews(response.data.data || []);
+            // --- เปลี่ยนจาก axios มาใช้ fetch ---
+            const response = await fetch(`${API_BASE_URL}/reviews/place/${place.id}`);
+            if (!response.ok) {
+                throw new Error('Failed to fetch reviews.');
+            }
+            const data = await response.json();
+            setReviews(data.data || []);
         } catch (error) {
             console.error("Error fetching reviews:", error);
-            showNotification('Failed to fetch reviews.', 'error');
+            showNotification(error.message, 'error');
         } finally {
             setIsLoading(false);
         }
@@ -34,13 +38,20 @@ const ReviewsManager = ({ place, onClose, showNotification }) => {
     const confirmDelete = async () => {
         if (!reviewToDelete) return;
         try {
-            await axios.delete(`${API_BASE_URL}/reviews/${reviewToDelete}`);
+            // --- เปลี่ยนจาก axios.delete มาใช้ fetch ---
+            const response = await fetch(`${API_BASE_URL}/reviews/${reviewToDelete}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) {
+                 const errorData = await response.json().catch(() => ({ error: 'Failed to delete review.' }));
+                throw new Error(errorData.error || 'Failed to delete review.');
+            }
             showNotification('Review deleted successfully!', 'success');
             setReviewToDelete(null);
             fetchReviews(); // Refresh the list
         } catch (error) {
             console.error("Error deleting review:", error);
-            showNotification('Failed to delete review.', 'error');
+            showNotification(error.message, 'error');
             setReviewToDelete(null);
         }
     };
@@ -99,4 +110,3 @@ const ReviewsManager = ({ place, onClose, showNotification }) => {
 };
 
 export default ReviewsManager;
-

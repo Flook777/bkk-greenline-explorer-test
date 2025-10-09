@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 // แก้ไข: import ให้เป็น named import ทั้งหมด
 import { ConfirmationModal } from '../shared/ConfirmationModal';
 import { Notification } from '../shared/Notification';
-import  EventForm  from './EventForm';
+import  EventForm  from './EventForm.jsx';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
