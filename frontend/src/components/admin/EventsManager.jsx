@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// แก้ไข: import ให้เป็น named import ทั้งหมด
 import { ConfirmationModal } from '../shared/ConfirmationModal';
 import { Notification } from '../shared/Notification';
-import  EventForm  from './EventForm.jsx';
+// แก้ไขบรรทัดนี้: เพิ่มปีกกา { } เพื่อให้เป็นการ import ที่ถูกต้อง
+import { EventForm } from './EventForm.jsx';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
@@ -20,7 +20,6 @@ export default function EventsManager() {
         setTimeout(() => setNotification({ message: null, type: 'error' }), 5000);
     };
     
-    // แก้ไข: เพิ่ม useCallback และใส่ dependency ที่ถูกต้อง
     const fetchEventsAndPlaces = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -141,4 +140,3 @@ export default function EventsManager() {
         </div>
     );
 }
-

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-function EventForm({ event, places, onSave, onCancel, isAdding }) {
+// แก้ไข: เปลี่ยนเป็น export function (Named Export)
+export function EventForm({ event, places, onSave, onCancel, isAdding }) {
     const [formData, setFormData] = useState({
         place_id: '',
         event_date: '',
@@ -75,6 +76,4 @@ function EventForm({ event, places, onSave, onCancel, isAdding }) {
          </div>
     );
 }
-
-export default EventForm;
 

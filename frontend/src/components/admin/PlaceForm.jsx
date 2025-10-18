@@ -18,7 +18,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
     });
     const [googleMapsUrl, setGoogleMapsUrl] = useState('');
     const [contacts, setContacts] = useState([{ platform: '', url: '' }]);
-    const [gallery, setGallery] = useState([]);
+    const [gallery, setGallery] = useState(['']);
     const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
@@ -45,9 +45,8 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
             const placeContacts = place.contact ? Object.entries(place.contact).map(([platform, url]) => ({ platform, url })) : [];
             setContacts(placeContacts.length > 0 ? placeContacts : [{ platform: '', url: '' }]);
             
-            // Ensure gallery is always an array
-            const placeGallery = Array.isArray(place.gallery) ? place.gallery : [];
-            setGallery(placeGallery.length > 0 ? placeGallery : ['']);
+            const placeGallery = place.gallery && place.gallery.length > 0 ? place.gallery : [''];
+            setGallery(placeGallery);
 
         } else {
             // Reset for new place form
@@ -119,8 +118,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         setIsUploading(true);
         try {
             const res = await axios.post(`${API_BASE_URL}/upload-gallery`, uploadData);
-            // Add new image URLs to the gallery, filtering out any previous empty strings
-            setGallery(prev => [...prev.filter(url => url && url.trim() !== ''), ...res.data.imageUrls]);
+            setGallery(prev => [...prev.filter(url => url.trim() !== ''), ...res.data.imageUrls]);
             showNotification(`${files.length} image(s) uploaded successfully!`, 'success');
         } catch (error) {
             console.error('Gallery upload failed:', error);
@@ -198,7 +196,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">Main Image</label>
                         <input type="file" name="image" id="image" onChange={handleFileUpload} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
                          {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
-                        {formData.image && !isUploading && <img src={formData.image} alt="Preview" className="mt-2 rounded-lg h-24 object-cover" />}
+                        {formData.image && !isUploading && <img src={formData.image} alt="Preview" className="mt-2 rounded-lg h-24 object-contain border border-gray-200" />}
                     </div>
                 </div>
 
@@ -246,7 +244,6 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 {/* --- Dynamic Gallery --- */}
                 <div>
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">Image Gallery</h3>
-                    
                     <div className="mb-4">
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gallery-upload">
                             Upload Images
@@ -281,3 +278,4 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         </div>
     );
 }
+

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-// **จุดที่แก้ไข:** เปลี่ยนเป็น Default Import (ไม่มีวงเล็บปีกกา)
-import PlacesManager from '../components/admin/PlacesManager';
-import EventsManager from '../components/admin/EventsManager';
+import PlacesManager from '../components/admin/PlacesManager.jsx';
+import EventsManager from '../components/admin/EventsManager.jsx';
 
 function AdminPanel() {
     const [activeTab, setActiveTab] = useState('places');

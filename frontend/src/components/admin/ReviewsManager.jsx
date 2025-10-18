@@ -3,7 +3,7 @@ import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
-const ReviewsManager = ({ place, onClose, showNotification }) => {
+const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) => {
     const [reviews, setReviews] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [reviewToDelete, setReviewToDelete] = useState(null);
@@ -12,7 +12,6 @@ const ReviewsManager = ({ place, onClose, showNotification }) => {
         if (!place) return;
         setIsLoading(true);
         try {
-            // --- เปลี่ยนจาก axios มาใช้ fetch ---
             const response = await fetch(`${API_BASE_URL}/reviews/place/${place.id}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch reviews.');
@@ -38,7 +37,6 @@ const ReviewsManager = ({ place, onClose, showNotification }) => {
     const confirmDelete = async () => {
         if (!reviewToDelete) return;
         try {
-            // --- เปลี่ยนจาก axios.delete มาใช้ fetch ---
             const response = await fetch(`${API_BASE_URL}/reviews/${reviewToDelete}`, {
                 method: 'DELETE',
             });
@@ -48,7 +46,8 @@ const ReviewsManager = ({ place, onClose, showNotification }) => {
             }
             showNotification('Review deleted successfully!', 'success');
             setReviewToDelete(null);
-            fetchReviews(); // Refresh the list
+            onReviewChange(); // แจ้งให้ Parent component ดึงข้อมูลใหม่
+            onClose(); // ปิด Modal หลังจากลบสำเร็จ
         } catch (error) {
             console.error("Error deleting review:", error);
             showNotification(error.message, 'error');
@@ -110,3 +109,4 @@ const ReviewsManager = ({ place, onClose, showNotification }) => {
 };
 
 export default ReviewsManager;
+
