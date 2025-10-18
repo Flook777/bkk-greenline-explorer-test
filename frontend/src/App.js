@@ -7,7 +7,7 @@ import AdminPanel from './pages/AdminPanel.jsx';
 import EventCalendar from './pages/EventCalendar.jsx';
 
 // --- Import a centralized API configuration ---
-import { API_URL, SOCKET_URL } from './apiConfig';
+import { API_URL, SOCKET_URL } from './apiConfig.js'; // Correct path
 
 // Connect to the socket server
 const socket = io(SOCKET_URL);
@@ -329,3 +329,4 @@ function PlaceDetail({ place, onBack, onReviewSubmit }) {
     </div>
   );
 }
+
