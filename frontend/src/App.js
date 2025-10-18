@@ -7,8 +7,8 @@ import AdminPanel from './pages/AdminPanel.jsx';
 import EventCalendar from './pages/EventCalendar.jsx';
 
 // --- Configuration ---
-const API_URL = 'http://localhost:3001/api';
 const socket = io('http://localhost:3001');
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 // --- Global Styles ---
 const GlobalStyles = () => {

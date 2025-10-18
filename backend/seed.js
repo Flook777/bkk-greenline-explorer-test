@@ -1,82 +1,95 @@
 const fs = require('fs');
 const path = require('path');
 
-function seedDatabase(db) {
-  const dataPath = path.join(__dirname, 'data.json');
-  const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
+async function seedDatabase(db) {
+  try {
+    const dataPath = path.join(__dirname, 'data.json');
+    const data = JSON.parse(fs.readFileSync(dataPath, 'utf8'));
 
-  db.serialize(() => {
-    // Drop existing tables to start fresh
-    db.run(`DROP TABLE IF EXISTS events`);
-    db.run(`DROP TABLE IF EXISTS reviews`);
-    db.run(`DROP TABLE IF EXISTS places`);
-    db.run(`DROP TABLE IF EXISTS stations`);
+    console.log('Dropping existing tables...');
+    await db.query(`
+        DROP TABLE IF EXISTS events;
+        DROP TABLE IF EXISTS reviews;
+        DROP TABLE IF EXISTS places;
+        DROP TABLE IF EXISTS stations;
+    `);
 
-    // Create tables
-    db.run(`CREATE TABLE stations (
-        id TEXT PRIMARY KEY,
-        name TEXT NOT NULL
-    )`);
-
-    db.run(`CREATE TABLE places (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        station_id TEXT,
-        name TEXT NOT NULL,
-        category TEXT,
-        description TEXT,
-        image TEXT,
-        gallery TEXT,
-        openingHours TEXT,
-        travelInfo TEXT,
-        phone TEXT,
-        contact TEXT,
-        location TEXT,
-        FOREIGN KEY (station_id) REFERENCES stations (id)
-    )`);
-
-    db.run(`CREATE TABLE reviews (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        place_id INTEGER,
-        user TEXT,
-        rating INTEGER,
-        comment TEXT,
-        FOREIGN KEY (place_id) REFERENCES places (id)
-    )`);
-
-    // สร้างตาราง events ที่ถูกต้อง
-    db.run(`CREATE TABLE events (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        place_id INTEGER NOT NULL,
-        event_date TEXT NOT NULL,
-        title TEXT NOT NULL,
-        description TEXT,
-        FOREIGN KEY (place_id) REFERENCES places (id) ON DELETE CASCADE
-    )`);
-
-    // Insert data
-    const stationStmt = db.prepare("INSERT INTO stations (id, name) VALUES (?, ?)");
-    data.stations.forEach(station => {
-        stationStmt.run(station.id, station.name);
-    });
-    stationStmt.finalize();
-
-    const placeStmt = db.prepare(`INSERT INTO places (
-        station_id, name, category, description, image, gallery, 
-        openingHours, travelInfo, phone, contact, location
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    (data.places || []).forEach(place => {
-        placeStmt.run(
-            place.station_id, place.name, place.category, place.description,
-            place.image, JSON.stringify(place.gallery), place.openingHours,
-            place.travelInfo, place.phone, JSON.stringify(place.contact),
-            JSON.stringify(place.location)
+    console.log('Creating tables...');
+    // ใช้ SERIAL PRIMARY KEY สำหรับ auto-incrementing ID ใน PostgreSQL
+    // ใช้ JSONB สำหรับเก็บข้อมูล JSON
+    // ใช้ Double quotes (") สำหรับชื่อคอลัมน์ที่เป็น CamelCase เช่น "openingHours"
+    await db.query(`
+        CREATE TABLE stations (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL
         );
-    });
-    placeStmt.finalize();
+    `);
+    await db.query(`
+        CREATE TABLE places (
+            id SERIAL PRIMARY KEY,
+            station_id TEXT REFERENCES stations(id),
+            name TEXT NOT NULL,
+            category TEXT,
+            description TEXT,
+            image TEXT,
+            gallery JSONB,
+            "openingHours" TEXT,
+            "travelInfo" TEXT,
+            phone TEXT,
+            contact JSONB,
+            location JSONB
+        );
+    `);
+    await db.query(`
+        CREATE TABLE reviews (
+            id SERIAL PRIMARY KEY,
+            place_id INTEGER REFERENCES places(id) ON DELETE CASCADE,
+            "user" TEXT,
+            rating INTEGER,
+            comment TEXT
+        );
+    `);
+    await db.query(`
+        CREATE TABLE events (
+            id SERIAL PRIMARY KEY,
+            place_id INTEGER NOT NULL REFERENCES places(id) ON DELETE CASCADE,
+            event_date DATE NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT
+        );
+    `);
+
+    console.log('Inserting data into stations...');
+    for (const station of data.stations) {
+        await db.query("INSERT INTO stations (id, name) VALUES ($1, $2)", [station.id, station.name]);
+    }
+
+    console.log('Inserting data into places...');
+    for (const place of (data.places || [])) {
+        await db.query(
+            `INSERT INTO places (station_id, name, category, description, image, gallery, "openingHours", "travelInfo", phone, contact, location) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [
+                place.station_id,
+                place.name,
+                place.category,
+                place.description,
+                place.image,
+                JSON.stringify(place.gallery || []),
+                place.openingHours,
+                place.travelInfo,
+                place.phone,
+                JSON.stringify(place.contact || {}),
+                JSON.stringify(place.location || null)
+            ]
+        );
+    }
 
     console.log('Database seeded successfully with all tables.');
-  });
+
+  } catch (error) {
+    console.error('Error seeding database:', error);
+  }
 }
 
 module.exports = seedDatabase;
-
