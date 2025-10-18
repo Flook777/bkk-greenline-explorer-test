@@ -2,17 +2,17 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 
-// Import หน้า Page หลักๆ
+// Import Pages
 import AdminPanel from './pages/AdminPanel.jsx';
 import EventCalendar from './pages/EventCalendar.jsx';
 
-// --- Import a centralized API configuration ---
-import { API_URL, SOCKET_URL } from './apiConfig.js'; // Correct path
+// Import the centralized API configuration
+import { API_URL, SOCKET_URL } from './apiConfig.js';
 
-// Connect to the socket server
+// Connect to the socket server using the centralized URL
 const socket = io(SOCKET_URL);
 
-// --- Global Styles ---
+// --- Global Styles (No changes needed here) ---
 const GlobalStyles = () => {
   useEffect(() => {
     const style = document.createElement('style');
@@ -30,7 +30,6 @@ const GlobalStyles = () => {
   return null;
 };
 
-// --- Main Application Component (หน้าที่แสดงผลหลัก) ---
 function MainApp() {
   const [stations, setStations] = useState([]);
   const [places, setPlaces] = useState([]);
@@ -62,17 +61,22 @@ function MainApp() {
   }, [activeStationId]);
 
   useEffect(() => {
-    const handleReviewUpdate = (updatedPlace) => {
-        setPlaces(currentPlaces =>
-            currentPlaces.map(p => p.id === updatedPlace.id ? updatedPlace : p)
-        );
-        setSelectedPlace(currentSelected =>
-            currentSelected?.id === updatedPlace.id ? updatedPlace : currentSelected
-        );
+    const handleReviewUpdate = (data) => {
+        if (data.placeId) {
+             axios.get(`${API_URL}/places/${activeStationId}`)
+                .then(res => {
+                    setPlaces(res.data.data);
+                    const updatedPlace = res.data.data.find(p => p.id === data.placeId);
+                    if (updatedPlace && selectedPlace && selectedPlace.id === data.placeId) {
+                        setSelectedPlace(updatedPlace);
+                    }
+                })
+                .catch(error => console.error(`Error re-fetching places for station ${activeStationId}:`, error));
+        }
     };
     socket.on('review_updated', handleReviewUpdate);
     return () => socket.off('review_updated', handleReviewUpdate);
-  }, []);
+  }, [activeStationId, selectedPlace]);
 
   const handleStationClick = (stationId) => {
     setActiveStationId(stationId);
@@ -90,6 +94,9 @@ function MainApp() {
 
   const handleReviewSubmit = (placeId, reviewData) => {
       axios.post(`${API_URL}/places/${placeId}/reviews`, reviewData)
+        .then(() => {
+            // No immediate UI update needed, socket will handle it.
+        })
         .catch(error => {
             console.error("Error submitting review:", error);
             alert("เกิดข้อผิดพลาดในการส่งรีวิว");
@@ -146,7 +153,7 @@ function MainApp() {
   );
 }
 
-// --- App Router (หน้าที่เลือกว่าจะแสดงหน้าไหน) ---
+// --- App Router ---
 export default function App() {
   const [route, setRoute] = useState(window.location.pathname);
 
@@ -181,8 +188,7 @@ export default function App() {
   return <MainApp />;
 }
 
-
-// --- Child Components ---
+// --- Child Components (No changes needed, but included for completeness) ---
 function StationList({ stations, activeStationId, onStationClick }) {
     return (
         <aside className="w-full md:w-80 p-6 md:my-4 md:ml-4 md:rounded-2xl glass-card flex-col flex-shrink-0 hidden md:flex">
@@ -242,7 +248,7 @@ function PlaceDetail({ place, onBack, onReviewSubmit }) {
   const handleSubmitReview = () => {
     if (currentRating > 0 && reviewComment.trim() !== '') {
       onReviewSubmit(place.id, { user: "ผู้เยี่ยมชม", rating: currentRating, comment: reviewComment });
-      alert('ขอบคุณสำหรับรีวิวของคุณ! ข้อมูลจะอัปเดตทันที');
+      alert('ขอบคุณสำหรับรีวิวของคุณ!');
       setCurrentRating(0);
       setReviewComment('');
     } else {
