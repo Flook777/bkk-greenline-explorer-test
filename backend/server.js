@@ -1,6 +1,6 @@
 const express = require('express');
-const { Pool } = require('pg'); // เพิ่มเข้ามา
-require('dotenv').config(); // เพิ่มเข้ามา
+const { Pool } = require('pg');
+require('dotenv').config();
 const cors = require('cors');
 const path = require('path');
 const http = require('http');
@@ -8,20 +8,29 @@ const { Server } = require("socket.io");
 const multer = require('multer');
 const fs = require('fs');
 
-// const seedDatabase = require('./seed'); // หากต้องการใช้งาน seed ให้เปิดคอมเมนต์
-
 const app = express();
 const server = http.createServer(app);
+
+// --- CORS Configuration for Vercel & Socket.IO ---
+// **สำคัญ:** แก้ไข URL ด้านล่างให้เป็น URL ของ Frontend บน Vercel ของคุณ
+const vercelFrontendUrl = 'https://bkk-greenline-explorer-test.vercel.app/'; // <--- แก้ไขตรงนี้
+
+const corsOptions = {
+    origin: vercelFrontendUrl,
+    methods: ["GET", "POST", "PUT", "DELETE"]
+};
+
 const io = new Server(server, {
-    cors: {
-        origin: "*", // **สำคัญ:** สำหรับ Production ควรเปลี่ยนเป็น URL ของ Frontend บน Vercel
-        methods: ["GET", "POST", "PUT", "DELETE"]
-    }
+    cors: corsOptions // ใช้ corsOptions เดียวกันกับ Express
 });
+
+app.use(cors(corsOptions)); // เปิดใช้งาน CORS สำหรับ Express
+
+// --- The rest of your server.js code ---
 
 const PORT = process.env.PORT || 3001;
 
-// --- Database Connection (เปลี่ยนเป็น PostgreSQL) ---
+// --- Database Connection ---
 const db = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
@@ -32,14 +41,10 @@ db.connect((err) => {
         console.error('Connection error', err.stack);
     } else {
         console.log('Connected to the PostgreSQL database.');
-        // seedDatabase(db); // หากต้องการ seed ข้อมูลตอนเริ่ม
     }
 });
 
-
 // --- Multer Setup for File Uploads ---
-// **คำเตือน:** การเก็บไฟล์แบบนี้ไม่เหมาะกับ Render หรือ Vercel เพราะไฟล์จะหายไปเมื่อแอปรีสตาร์ท
-// ควรเปลี่ยนไปใช้ Cloud Storage เช่น Supabase Storage, AWS S3, หรือ Cloudinary
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         const uploadPath = path.join(__dirname, 'public/images');
@@ -53,13 +58,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-
-app.use(cors()); // **แนะนำ:** ตั้งค่า origin ให้เฉพาะเจาะจงมากขึ้นสำหรับ Production
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 const safeJsonParse = (data, fallback = null) => {
-    // ฟังก์ชันนี้ยังคงใช้งานได้เหมือนเดิม
     if (typeof data !== 'string' || !data) return fallback;
     try {
         const parsed = JSON.parse(data);
@@ -71,14 +73,12 @@ const safeJsonParse = (data, fallback = null) => {
     }
 };
 
-// --- API ENDPOINTS (แก้ไขทั้งหมดเป็น async/await) ---
+// --- API ENDPOINTS ---
 
-// Image Upload
 app.post('/api/upload', upload.single('placeImage'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded.' });
     }
-    // **สำคัญ:** URL นี้จะใช้ไม่ได้บน Render ต้องเปลี่ยนเป็น URL ที่ถูกต้องหลังจากอัปโหลดไป Cloud Storage
     const imageUrl = `${process.env.BACKEND_URL || `http://localhost:${PORT}`}/images/${req.file.filename}`;
     res.json({ imageUrl });
 });
@@ -91,15 +91,13 @@ app.post('/api/upload-gallery', upload.array('galleryImages', 10), (req, res) =>
     res.json({ imageUrls });
 });
 
-
 // --- Places CRUD ---
 app.get('/api/places', async (req, res) => {
     try {
         const result = await db.query("SELECT * FROM places ORDER BY name");
-        // ใน pg, `rows` คือ array ของผลลัพธ์
         const processedRows = result.rows.map(row => ({
             ...row,
-            gallery: row.gallery || [], // JSONB จะถูก parse เป็น object/array อัตโนมัติ
+            gallery: row.gallery || [],
             location: row.location || null,
             contact: row.contact || {}
         }));
@@ -142,7 +140,6 @@ app.put('/api/places/:id', async (req, res) => {
 app.delete('/api/places/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        // ใช้ transaction เพื่อความปลอดภัยของข้อมูล
         await db.query('BEGIN');
         await db.query('DELETE FROM reviews WHERE place_id = $1', [id]);
         await db.query('DELETE FROM events WHERE place_id = $1', [id]);
@@ -156,11 +153,10 @@ app.delete('/api/places/:id', async (req, res) => {
     }
 });
 
-
 // --- Events CRUD ---
 app.get('/api/events', async (req, res) => {
     const sql = `
-        SELECT 
+        SELECT
             e.id, e.place_id, e.event_date, e.title, e.description,
             p.name as "placeName", p.station_id
         FROM events e
@@ -262,8 +258,6 @@ app.get('/api/stations', async (req, res) => {
 
 app.get('/api/places/:station_id', async (req, res) => {
     const stationId = req.params.station_id;
-    // หมายเหตุ: SQLite `json_group_array` และ `json_object` อาจจะต้องเปลี่ยนสำหรับ PostgreSQL
-    // PostgreSQL ใช้ `json_agg` และ `json_build_object`
     const sql = `
       SELECT 
         p.*, 
@@ -297,19 +291,21 @@ app.get('/api/places/:station_id', async (req, res) => {
     }
 });
 
-
 app.post('/api/places/:placeId/reviews', async (req, res) => {
     const placeId = req.params.placeId;
     const { user, rating, comment } = req.body;
     const sql = `INSERT INTO reviews (place_id, "user", rating, comment) VALUES ($1, $2, $3, $4) RETURNING id`;
     try {
         const result = await db.query(sql, [placeId, user, rating, comment]);
+        // Emit event after successfully adding a review
+        io.emit('review_updated', { placeId });
         res.json({ "message": "Review added successfully", "id": result.rows[0].id });
     } catch (err) {
         console.error(err);
         res.status(400).json({ "error": err.message });
     }
 });
+
 
 // --- Socket.IO & Server Start ---
 io.on('connection', (socket) => {
