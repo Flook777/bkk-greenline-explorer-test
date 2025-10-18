@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API_URL } from '../../apiConfig'; // Import the centralized API URL
+import { API_URL } from '../../apiConfig.js'; // Import the centralized API URL
 
 export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNotification }) {
     const [formData, setFormData] = useState({

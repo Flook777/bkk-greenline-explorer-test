@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
-import { API_URL } from '../../apiConfig'; // Import the centralized API URL
+import { API_URL } from '../../apiConfig.js'; // Import the centralized API URL
 
 const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) => {
     const [reviews, setReviews] = useState([]);

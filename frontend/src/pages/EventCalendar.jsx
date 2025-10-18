@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { API_URL } from '../apiConfig'; // Import the centralized API URL
+import { API_URL } from '../../apiConfig.js'; // Import the centralized API URL
 
 const EventModal = ({ event, onClose }) => {
     if (!event) return null;

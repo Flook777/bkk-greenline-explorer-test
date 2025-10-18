@@ -3,7 +3,7 @@ import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
 import { Notification } from '../shared/Notification.jsx';
 import { PlaceForm } from './PlaceForm.jsx';
 import ReviewsManager from './ReviewsManager.jsx';
-import { API_URL } from '../../apiConfig'; // Import the centralized API URL
+import { API_URL } from '../../apiConfig.js'; // Import the centralized API URL
 
 function PlacesManager() {
     const [places, setPlaces] = useState([]);
