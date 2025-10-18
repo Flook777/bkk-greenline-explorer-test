@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 // --- CORS Configuration for Vercel & Socket.IO ---
 // **สำคัญ:** แก้ไข URL ด้านล่างให้เป็น URL ของ Frontend บน Vercel ของคุณ
-const vercelFrontendUrl = 'https://bkk-greenline-explorer-test.vercel.app/'; // <--- แก้ไขตรงนี้
+const vercelFrontendUrl = 'https://bkk-greenline-explorer-test.vercel.app'; // เอา / ออก
 
 const corsOptions = {
     origin: vercelFrontendUrl,
