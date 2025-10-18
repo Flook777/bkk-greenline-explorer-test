@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ConfirmationModal } from '../shared/ConfirmationModal';
-import { Notification } from '../shared/Notification';
+import ConfirmationModal from '../shared/ConfirmationModal'; // Corrected import
+import Notification from '../shared/Notification'; // Corrected import
 import { EventForm } from './EventForm.jsx';
-import { API_URL } from '../../apiConfig.js'; // Import the centralized API URL
+import { API_URL } from '../../apiConfig.js'; // Use centralized config
 
 export default function EventsManager() {
     const [events, setEvents] = useState([]);
@@ -138,3 +138,4 @@ export default function EventsManager() {
         </div>
     );
 }
+

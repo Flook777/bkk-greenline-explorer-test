@@ -1,7 +1,7 @@
 import React from 'react';
 
-// แก้ไข: เปลี่ยนเป็น export const (Named Export)
-export const Notification = ({ message, type = 'error', onClose }) => {
+// Corrected export
+const Notification = ({ message, type = 'error', onClose }) => {
     if (!message) return null;
     const typeClasses = type === 'error'
         ? 'bg-red-100 border-l-4 border-red-500 text-red-700'
@@ -16,3 +16,4 @@ export const Notification = ({ message, type = 'error', onClose }) => {
     );
 };
 
+export default Notification;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API_URL } from '../../apiConfig.js'; // Import the centralized API URL
+import { API_URL } from '../../apiConfig.js'; // Use centralized config
 
 export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNotification }) {
     const [formData, setFormData] = useState({
@@ -161,8 +161,8 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         const submissionData = {
             ...formData,
             id: place?.id,
-            contact: JSON.stringify(finalContacts),
-            gallery: JSON.stringify(finalGallery),
+            contact: finalContacts,
+            gallery: finalGallery,
         };
         onSave(submissionData);
     };
@@ -277,3 +277,4 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         </div>
     );
 }
+

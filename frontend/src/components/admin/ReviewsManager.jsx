@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
-import { API_URL } from '../../apiConfig.js'; // Import the centralized API URL
+import ConfirmationModal from '../shared/ConfirmationModal.jsx'; // Corrected import
+import { API_URL } from '../../apiConfig.js'; // Use centralized config
 
 const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) => {
     const [reviews, setReviews] = useState([]);
@@ -45,8 +45,8 @@ const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) =>
             }
             showNotification('Review deleted successfully!', 'success');
             setReviewToDelete(null);
-            onReviewChange(); // แจ้งให้ Parent component ดึงข้อมูลใหม่
-            onClose(); // ปิด Modal หลังจากลบสำเร็จ
+            onReviewChange();
+            onClose(); 
         } catch (error) {
             console.error("Error deleting review:", error);
             showNotification(error.message, 'error');
@@ -108,3 +108,4 @@ const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) =>
 };
 
 export default ReviewsManager;
+

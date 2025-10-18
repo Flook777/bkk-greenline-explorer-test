@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
-import { Notification } from '../shared/Notification.jsx';
-import { PlaceForm } from './PlaceForm.jsx';
+import ConfirmationModal from '../shared/ConfirmationModal.jsx'; // Corrected import
+import Notification from '../shared/Notification.jsx'; // Corrected import
+import PlaceForm from './PlaceForm.jsx'; // Corrected import
 import ReviewsManager from './ReviewsManager.jsx';
-import { API_URL } from '../../apiConfig.js'; // Correct path
+import { API_URL } from '../../apiConfig.js'; // Use centralized config
 
-function PlacesManager() {
+function PlacesManager () { 
     const [places, setPlaces] = useState([]);
     const [stations, setStations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -31,14 +31,7 @@ function PlacesManager() {
             const placesData = await placesRes.json();
             const stationsData = await stationsRes.json();
             
-            const processedPlaces = (placesData.data || []).map(place => ({
-                ...place,
-                gallery: Array.isArray(place.gallery) ? place.gallery : (place.gallery ? JSON.parse(place.gallery) : []),
-                contact: typeof place.contact === 'object' ? place.contact : (place.contact ? JSON.parse(place.contact) : {}),
-                location: typeof place.location === 'object' ? place.location : (place.location ? JSON.parse(place.location) : null),
-            }));
-
-            setPlaces(processedPlaces);
+            setPlaces(placesData.data || []);
             setStations(stationsData.data || []);
         } catch (error) {
             showNotification(error.message, 'error');
@@ -94,13 +87,7 @@ function PlacesManager() {
     };
 
     const handleEdit = (place) => {
-        const placeWithParsedData = {
-            ...place,
-            gallery: Array.isArray(place.gallery) ? place.gallery : [],
-            contact: typeof place.contact === 'object' && place.contact !== null ? place.contact : {},
-            location: typeof place.location === 'object' && place.location !== null ? place.location : null,
-        };
-        setEditingPlace(placeWithParsedData);
+        setEditingPlace(place);
         setIsAdding(false);
     };
 
@@ -172,6 +159,4 @@ function PlacesManager() {
         </div>
     );
 }
-
-export default PlacesManager;
 

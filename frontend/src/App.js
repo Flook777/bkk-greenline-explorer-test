@@ -94,9 +94,6 @@ function MainApp() {
 
   const handleReviewSubmit = (placeId, reviewData) => {
       axios.post(`${API_URL}/places/${placeId}/reviews`, reviewData)
-        .then(() => {
-            // No immediate UI update needed, socket will handle it.
-        })
         .catch(error => {
             console.error("Error submitting review:", error);
             alert("เกิดข้อผิดพลาดในการส่งรีวิว");
@@ -188,7 +185,8 @@ export default function App() {
   return <MainApp />;
 }
 
-// --- Child Components (No changes needed, but included for completeness) ---
+
+// --- Child Components ---
 function StationList({ stations, activeStationId, onStationClick }) {
     return (
         <aside className="w-full md:w-80 p-6 md:my-4 md:ml-4 md:rounded-2xl glass-card flex-col flex-shrink-0 hidden md:flex">
