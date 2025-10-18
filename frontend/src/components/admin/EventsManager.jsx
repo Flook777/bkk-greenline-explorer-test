@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ConfirmationModal } from '../shared/ConfirmationModal';
 import { Notification } from '../shared/Notification';
-// แก้ไขบรรทัดนี้: เพิ่มปีกกา { } เพื่อให้เป็นการ import ที่ถูกต้อง
 import { EventForm } from './EventForm.jsx';
-
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_URL } from '../../apiConfig'; // Import the centralized API URL
 
 export default function EventsManager() {
     const [events, setEvents] = useState([]);
@@ -24,8 +22,8 @@ export default function EventsManager() {
         setIsLoading(true);
         try {
             const [eventsRes, placesRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/events`),
-                fetch(`${API_BASE_URL}/places`)
+                fetch(`${API_URL}/events`),
+                fetch(`${API_URL}/places`)
             ]);
             if (!eventsRes.ok || !placesRes.ok) throw new Error('Failed to fetch event data');
             
@@ -49,7 +47,7 @@ export default function EventsManager() {
     const confirmDelete = async () => {
         if (!eventToDelete) return;
         try {
-            const res = await fetch(`${API_BASE_URL}/events/${eventToDelete}`, { method: 'DELETE' });
+            const res = await fetch(`${API_URL}/events/${eventToDelete}`, { method: 'DELETE' });
             if (!res.ok) throw new Error('Failed to delete event');
             showNotification('Event deleted successfully!', 'success');
             await fetchEventsAndPlaces();
@@ -62,7 +60,7 @@ export default function EventsManager() {
 
     const handleSave = async (eventData) => {
         const isUpdating = !!eventData.id;
-        const url = isUpdating ? `${API_BASE_URL}/events/${eventData.id}` : `${API_BASE_URL}/events/add`;
+        const url = isUpdating ? `${API_URL}/events/${eventData.id}` : `${API_URL}/events/add`;
         const method = isUpdating ? 'PUT' : 'POST';
 
         try {

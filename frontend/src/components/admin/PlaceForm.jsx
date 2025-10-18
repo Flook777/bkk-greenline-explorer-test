@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_URL } from '../../apiConfig'; // Import the centralized API URL
 
 export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNotification }) {
     const [formData, setFormData] = useState({
@@ -95,7 +94,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         setIsUploading(true);
 
         try {
-            const res = await axios.post(`${API_BASE_URL}/upload`, uploadData);
+            const res = await axios.post(`${API_URL}/upload`, uploadData);
             setFormData(prev => ({ ...prev, image: res.data.imageUrl }));
             showNotification('Image uploaded successfully!', 'success');
         } catch (error) {
@@ -117,7 +116,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         
         setIsUploading(true);
         try {
-            const res = await axios.post(`${API_BASE_URL}/upload-gallery`, uploadData);
+            const res = await axios.post(`${API_URL}/upload-gallery`, uploadData);
             setGallery(prev => [...prev.filter(url => url.trim() !== ''), ...res.data.imageUrls]);
             showNotification(`${files.length} image(s) uploaded successfully!`, 'success');
         } catch (error) {
@@ -278,4 +277,3 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         </div>
     );
 }
-

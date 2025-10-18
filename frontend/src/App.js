@@ -6,9 +6,11 @@ import io from 'socket.io-client';
 import AdminPanel from './pages/AdminPanel.jsx';
 import EventCalendar from './pages/EventCalendar.jsx';
 
-// --- Configuration ---
-const socket = io('http://localhost:3001');
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+// --- Import a centralized API configuration ---
+import { API_URL, SOCKET_URL } from './apiConfig';
+
+// Connect to the socket server
+const socket = io(SOCKET_URL);
 
 // --- Global Styles ---
 const GlobalStyles = () => {
@@ -61,10 +63,10 @@ function MainApp() {
 
   useEffect(() => {
     const handleReviewUpdate = (updatedPlace) => {
-        setPlaces(currentPlaces => 
+        setPlaces(currentPlaces =>
             currentPlaces.map(p => p.id === updatedPlace.id ? updatedPlace : p)
         );
-        setSelectedPlace(currentSelected => 
+        setSelectedPlace(currentSelected =>
             currentSelected?.id === updatedPlace.id ? updatedPlace : currentSelected
         );
     };
@@ -85,7 +87,7 @@ function MainApp() {
   };
 
   const handleBackToList = () => setSelectedPlace(null);
-  
+
   const handleReviewSubmit = (placeId, reviewData) => {
       axios.post(`${API_URL}/places/${placeId}/reviews`, reviewData)
         .catch(error => {
@@ -150,7 +152,7 @@ export default function App() {
 
   useEffect(() => {
     const onLocationChange = () => setRoute(window.location.pathname);
-    
+
     const handleLinkClick = (e) => {
       const anchor = e.target.closest('a');
       if (anchor && anchor.href && anchor.host === window.location.host) {
@@ -159,7 +161,7 @@ export default function App() {
         onLocationChange();
       }
     };
-    
+
     window.addEventListener('popstate', onLocationChange);
     document.addEventListener('click', handleLinkClick);
 
@@ -175,7 +177,7 @@ export default function App() {
   if (route === '/events') {
     return <EventCalendar />;
   }
-  
+
   return <MainApp />;
 }
 
@@ -327,4 +329,3 @@ function PlaceDetail({ place, onBack, onReviewSubmit }) {
     </div>
   );
 }
-

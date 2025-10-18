@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-// แก้ไข: import ทุกอย่างเป็น default import (ไม่มีปีกกา) ให้ถูกต้อง
 import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
 import { Notification } from '../shared/Notification.jsx';
 import { PlaceForm } from './PlaceForm.jsx';
 import ReviewsManager from './ReviewsManager.jsx';
-
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_URL } from '../../apiConfig'; // Import the centralized API URL
 
 function PlacesManager() {
     const [places, setPlaces] = useState([]);
@@ -26,8 +24,8 @@ function PlacesManager() {
         setIsLoading(true);
         try {
             const [placesRes, stationsRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/places`),
-                fetch(`${API_BASE_URL}/stations`)
+                fetch(`${API_URL}/places`),
+                fetch(`${API_URL}/stations`)
             ]);
             if (!placesRes.ok || !stationsRes.ok) throw new Error('Failed to fetch places or stations data');
             const placesData = await placesRes.json();
@@ -58,7 +56,7 @@ function PlacesManager() {
     const confirmDelete = async () => {
         if (!placeToDelete) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/places/${placeToDelete}`, { method: 'DELETE' });
+            const response = await fetch(`${API_URL}/places/${placeToDelete}`, { method: 'DELETE' });
             if (!response.ok) throw new Error('Failed to delete place.');
             showNotification('Place deleted successfully!', 'success');
             await fetchInitialData();
@@ -71,7 +69,7 @@ function PlacesManager() {
 
      const handleSave = async (placeData) => {
         const isUpdating = !!placeData.id;
-        const url = isUpdating ? `${API_BASE_URL}/places/${placeData.id}` : `${API_BASE_URL}/places/add`;
+        const url = isUpdating ? `${API_URL}/places/${placeData.id}` : `${API_URL}/places/add`;
         const method = isUpdating ? 'PUT' : 'POST';
 
         try {

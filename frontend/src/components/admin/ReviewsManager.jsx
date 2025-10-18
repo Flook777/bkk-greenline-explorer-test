@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ConfirmationModal } from '../shared/ConfirmationModal.jsx';
-
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_URL } from '../../apiConfig'; // Import the centralized API URL
 
 const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) => {
     const [reviews, setReviews] = useState([]);
@@ -12,7 +11,7 @@ const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) =>
         if (!place) return;
         setIsLoading(true);
         try {
-            const response = await fetch(`${API_BASE_URL}/reviews/place/${place.id}`);
+            const response = await fetch(`${API_URL}/reviews/place/${place.id}`);
             if (!response.ok) {
                 throw new Error('Failed to fetch reviews.');
             }
@@ -37,7 +36,7 @@ const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) =>
     const confirmDelete = async () => {
         if (!reviewToDelete) return;
         try {
-            const response = await fetch(`${API_BASE_URL}/reviews/${reviewToDelete}`, {
+            const response = await fetch(`${API_URL}/reviews/${reviewToDelete}`, {
                 method: 'DELETE',
             });
             if (!response.ok) {
@@ -109,4 +108,3 @@ const ReviewsManager = ({ place, onClose, showNotification, onReviewChange }) =>
 };
 
 export default ReviewsManager;
-

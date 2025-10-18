@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_URL } from '../apiConfig'; // Import the centralized API URL
 
 const EventModal = ({ event, onClose }) => {
     if (!event) return null;
@@ -31,7 +30,7 @@ function EventCalendar() {
         const fetchEvents = async () => {
             setIsLoading(true);
             try {
-                const response = await fetch(`${API_BASE_URL}/events`);
+                const response = await fetch(`${API_URL}/events`);
                 if (!response.ok) throw new Error('Could not fetch events.');
                 const data = await response.json();
                 const eventsByDate = (data.data || []).reduce((acc, event) => {
