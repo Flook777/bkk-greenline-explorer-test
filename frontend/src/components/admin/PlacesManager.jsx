@@ -160,3 +160,4 @@ function PlacesManager() {
     );
 }
 
+export default PlacesManager;
