@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ConfirmationModal from '../shared/ConfirmationModal.jsx'; // Corrected import
 import Notification from '../shared/Notification.jsx'; // Corrected import
-import PlaceForm from './PlaceForm.jsx'; // Corrected import
+import { PlaceForm } from './PlaceForm.jsx'; // Corrected import
 import ReviewsManager from './ReviewsManager.jsx';
 import { API_URL } from '../../apiConfig.js'; // Use centralized config
 
