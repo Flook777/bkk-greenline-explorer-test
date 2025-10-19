@@ -10,7 +10,6 @@ const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
-const PORT = process.env.PORT || 3001;
 
 // --- CORS Configuration ---
 const vercelFrontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
@@ -25,7 +24,7 @@ const io = new Server(server, {
 });
 
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json()); 
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 
@@ -95,7 +94,7 @@ app.post('/api/places', upload.fields([
 ]), async (req, res) => {
     try {
         const {
-            name, description, station_id, category, opening_hours,
+            name, description, station_id, category, opening_hours, // CORRECTED
             travelInfo, phone, latitude, longitude, contact, gallery: galleryUrls
         } = req.body;
 
@@ -108,9 +107,9 @@ app.post('/api/places', upload.fields([
         const location = (latitude && longitude) ? JSON.stringify({ lat: parseFloat(latitude), lng: parseFloat(longitude) }) : null;
         const parsedContact = contact ? JSON.parse(contact) : {};
         
-        const sql = `INSERT INTO places (name, description, station_id, category, image_url, opening_hours, "travelInfo", phone, location, contact, gallery) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
+        const sql = `INSERT INTO places (name, description, station_id, category, image_url, opening_hours, "travelInfo", phone, location, contact, gallery) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`; // CORRECTED
         const params = [
-            name, description, station_id, category, imageUrl, opening_hours,
+            name, description, station_id, category, imageUrl, opening_hours, // CORRECTED
             travelInfo, phone, location, parsedContact, galleryImageUrls
         ];
         
@@ -131,7 +130,7 @@ app.put('/api/places/:id', upload.fields([
     const { id } = req.params;
     try {
         const {
-            name, description, station_id, category, opening_hours,
+            name, description, station_id, category, opening_hours, // CORRECTED
             travelInfo, phone, latitude, longitude, contact, gallery: galleryUrls, image // Keep existing image if not updated
         } = req.body;
         
@@ -147,9 +146,9 @@ app.put('/api/places/:id', upload.fields([
         const location = (latitude && longitude) ? JSON.stringify({ lat: parseFloat(latitude), lng: parseFloat(longitude) }) : null;
         const parsedContact = contact ? JSON.parse(contact) : {};
 
-        const sql = `UPDATE places SET name = $1, description = $2, station_id = $3, category = $4, image_url = $5, opening_hours = $6, "travelInfo" = $7, phone = $8, location = $9, contact = $10, gallery = $11 WHERE id = $12 RETURNING *`;
+        const sql = `UPDATE places SET name = $1, description = $2, station_id = $3, category = $4, image_url = $5, opening_hours = $6, "travelInfo" = $7, phone = $8, location = $9, contact = $10, gallery = $11 WHERE id = $12 RETURNING *`; // CORRECTED
         const params = [
-            name, description, station_id, category, imageUrl, opening_hours,
+            name, description, station_id, category, imageUrl, opening_hours, // CORRECTED
             travelInfo, phone, location, parsedContact, galleryImageUrls, id
         ];
 
@@ -213,4 +212,3 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
-

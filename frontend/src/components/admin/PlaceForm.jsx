@@ -9,7 +9,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         station_id: '',
         category: '',
         image: '',
-        opening_hours: '', // Corrected from openingHours
+        openingHours: '',
         travelInfo: '',
         phone: '',
         latitude: '',
@@ -28,7 +28,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 station_id: place.station_id || (stations.length > 0 ? stations[0].id : ''),
                 category: place.category || '',
                 image: place.image || '',
-                opening_hours: place.opening_hours || '', // Corrected from openingHours
+                openingHours: place.openingHours || '',
                 travelInfo: place.travelInfo || '',
                 phone: place.phone || '',
                 latitude: place.location?.lat || '',
@@ -55,7 +55,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 station_id: stations.length > 0 ? stations[0].id : '',
                 category: 'Restaurant',
                 image: '',
-                opening_hours: '', // Corrected from openingHours
+                openingHours: '',
                 travelInfo: '',
                 phone: '',
                 latitude: '',
@@ -194,7 +194,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">Main Image</label>
                         <input type="file" name="image" id="image" onChange={handleFileUpload} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                        {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
+                         {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
                         {formData.image && !isUploading && <img src={formData.image} alt="Preview" className="mt-2 rounded-lg h-24 object-contain border border-gray-200" />}
                     </div>
                 </div>
@@ -202,21 +202,21 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 {/* --- Additional Info --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="opening_hours">Opening Hours</label>
-                        <input type="text" name="opening_hours" id="opening_hours" value={formData.opening_hours} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g., Mon-Fri 09:00-18:00"/>
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="openingHours">Opening Hours</label>
+                        <input type="text" name="openingHours" id="openingHours" value={formData.openingHours} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g., Mon-Fri 09:00-18:00"/>
                     </div>
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">Phone Number</label>
                         <input type="text" name="phone" id="phone" value={formData.phone} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" />
                     </div>
                 </div>
-                <div>
+                 <div>
                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="travelInfo">Travel Info</label>
                     <input type="text" name="travelInfo" id="travelInfo" value={formData.travelInfo} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g., Exit 3, 200m walk"/>
                 </div>
 
                 {/* --- Location --- */}
-                <div>
+                 <div>
                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="googleMapsUrl">Google Maps URL</label>
                     <input type="url" name="googleMapsUrl" id="googleMapsUrl" value={googleMapsUrl} onChange={handleGoogleMapsUrlChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Paste Google Maps URL here..."/>
                 </div>
@@ -255,7 +255,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                             onChange={handleGalleryUpload}
                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                         />
-                        {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading gallery...</p>}
+                         {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading gallery...</p>}
                     </div>
                     
                     <h4 className="text-md font-semibold text-gray-600 mb-2">Or add by URL</h4>
