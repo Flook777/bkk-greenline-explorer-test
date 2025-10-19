@@ -5,7 +5,7 @@ import PlaceForm from './PlaceForm.jsx'; // Corrected import
 import ReviewsManager from './ReviewsManager.jsx';
 import { API_URL } from '../../apiConfig.js'; // Use centralized config
 
-function PlacesManager () { 
+function PlacesManager() {
     const [places, setPlaces] = useState([]);
     const [stations, setStations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
