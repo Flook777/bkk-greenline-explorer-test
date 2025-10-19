@@ -9,8 +9,8 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         station_id: '',
         category: '',
         image: '',
-        openingHours: '',
-        travelInfo: '',
+        opening_hours: '',
+        travelinfo: '', // Corrected from travelInfo
         phone: '',
         latitude: '',
         longitude: ''
@@ -19,6 +19,11 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
     const [contacts, setContacts] = useState([{ platform: '', url: '' }]);
     const [gallery, setGallery] = useState(['']);
     const [isUploading, setIsUploading] = useState(false);
+    
+    // States to hold the actual file objects
+    const [imageFile, setImageFile] = useState(null);
+    const [galleryFiles, setGalleryFiles] = useState([]);
+
 
     useEffect(() => {
         if (place) {
@@ -27,9 +32,9 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 description: place.description || '',
                 station_id: place.station_id || (stations.length > 0 ? stations[0].id : ''),
                 category: place.category || '',
-                image: place.image || '',
-                openingHours: place.openingHours || '',
-                travelInfo: place.travelInfo || '',
+                image: place.image_url || '', // Use image_url from backend
+                opening_hours: place.opening_hours || '',
+                travelinfo: place.travelinfo || '', // Corrected from travelInfo
                 phone: place.phone || '',
                 latitude: place.location?.lat || '',
                 longitude: place.location?.lng || ''
@@ -46,6 +51,10 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
             
             const placeGallery = place.gallery && place.gallery.length > 0 ? place.gallery : [''];
             setGallery(placeGallery);
+            
+            // Clear file inputs on edit
+            setImageFile(null);
+            setGalleryFiles([]);
 
         } else {
             // Reset for new place form
@@ -55,8 +64,8 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 station_id: stations.length > 0 ? stations[0].id : '',
                 category: 'Restaurant',
                 image: '',
-                openingHours: '',
-                travelInfo: '',
+                opening_hours: '',
+                travelinfo: '', // Corrected from travelInfo
                 phone: '',
                 latitude: '',
                 longitude: ''
@@ -64,6 +73,8 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
             setGoogleMapsUrl('');
             setContacts([{ platform: '', url: '' }]);
             setGallery(['']);
+            setImageFile(null);
+            setGalleryFiles([]);
         }
     }, [place, stations]);
 
@@ -85,48 +96,19 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         }
     };
     
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        const uploadData = new FormData();
-        uploadData.append('placeImage', file);
-        setIsUploading(true);
-
-        try {
-            const res = await axios.post(`${API_URL}/upload`, uploadData);
-            setFormData(prev => ({ ...prev, image: res.data.imageUrl }));
-            showNotification('Image uploaded successfully!', 'success');
-        } catch (error) {
-            console.error('Image upload failed:', error);
-            showNotification('Image upload failed. Please try again.', 'error');
-        } finally {
-            setIsUploading(false);
+    // Store the selected file in state
+    const handleFileChange = (e) => {
+        if (e.target.files[0]) {
+            setImageFile(e.target.files[0]);
+            // Optional: show a preview of the new image
+            setFormData(prev => ({...prev, image: URL.createObjectURL(e.target.files[0])}));
         }
     };
     
-    const handleGalleryUpload = async (e) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
-
-        const uploadData = new FormData();
-        for (let i = 0; i < files.length; i++) {
-            uploadData.append('galleryImages', files[i]);
-        }
-        
-        setIsUploading(true);
-        try {
-            const res = await axios.post(`${API_URL}/upload-gallery`, uploadData);
-            setGallery(prev => [...prev.filter(url => url.trim() !== ''), ...res.data.imageUrls]);
-            showNotification(`${files.length} image(s) uploaded successfully!`, 'success');
-        } catch (error) {
-            console.error('Gallery upload failed:', error);
-            showNotification('Gallery upload failed. Please try again.', 'error');
-        } finally {
-            setIsUploading(false);
-        }
+    // Store gallery files in state
+    const handleGalleryFilesChange = (e) => {
+        setGalleryFiles([...e.target.files]);
     };
-
 
     // --- Contact Handlers ---
     const handleContactChange = (index, field, value) => {
@@ -149,22 +131,37 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const finalContacts = contacts.reduce((acc, contact) => {
-            if (contact.platform && contact.url) {
-                acc[contact.platform] = contact.url;
-            }
+        
+        // Use FormData to send both files and text
+        const submissionData = new FormData();
+
+        // Append all form text data
+        for (const key in formData) {
+             // Don't append the old image URL if a new file is selected
+            if (key === 'image' && imageFile) continue;
+            submissionData.append(key, formData[key]);
+        }
+        
+        // Append contact and gallery JSON
+        submissionData.append('contact', JSON.stringify(contacts.reduce((acc, contact) => {
+            if (contact.platform && contact.url) acc[contact.platform] = contact.url;
             return acc;
-        }, {});
+        }, {})));
+        submissionData.append('gallery', JSON.stringify(gallery.filter(url => url && url.trim() !== '')));
 
-        const finalGallery = gallery.filter(url => url && url.trim() !== '');
+        // Append the new main image file if it exists
+        if (imageFile) {
+            submissionData.append('image', imageFile);
+        }
 
-        const submissionData = {
-            ...formData,
-            id: place?.id,
-            contact: finalContacts,
-            gallery: finalGallery,
-        };
-        onSave(submissionData);
+        // Append new gallery image files if they exist
+        if (galleryFiles.length > 0) {
+            galleryFiles.forEach(file => {
+                submissionData.append('gallery', file);
+            });
+        }
+        
+        onSave(submissionData, place?.id);
     };
     
     return (
@@ -192,31 +189,31 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                         <input type="text" name="category" id="category" value={formData.category} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" />
                     </div>
                     <div>
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">Main Image</label>
-                        <input type="file" name="image" id="image" onChange={handleFileUpload} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
-                         {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
-                        {formData.image && !isUploading && <img src={formData.image} alt="Preview" className="mt-2 rounded-lg h-24 object-contain border border-gray-200" />}
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image-upload">Main Image</label>
+                        <input type="file" name="image" id="image-upload" onChange={handleFileChange} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                        {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
+                        {formData.image && <img src={formData.image} alt="Preview" className="mt-2 rounded-lg h-24 object-contain border border-gray-200" />}
                     </div>
                 </div>
 
                 {/* --- Additional Info --- */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="openingHours">Opening Hours</label>
-                        <input type="text" name="openingHours" id="openingHours" value={formData.openingHours} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g., Mon-Fri 09:00-18:00"/>
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="opening_hours">Opening Hours</label>
+                        <input type="text" name="opening_hours" id="opening_hours" value={formData.opening_hours} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g., Mon-Fri 09:00-18:00"/>
                     </div>
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="phone">Phone Number</label>
                         <input type="text" name="phone" id="phone" value={formData.phone} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" />
                     </div>
                 </div>
-                 <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="travelInfo">Travel Info</label>
-                    <input type="text" name="travelInfo" id="travelInfo" value={formData.travelInfo} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g., Exit 3, 200m walk"/>
+                <div>
+                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="travelinfo">Travel Info</label>
+                    <input type="text" name="travelinfo" id="travelinfo" value={formData.travelinfo} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="e.g., Exit 3, 200m walk"/>
                 </div>
 
                 {/* --- Location --- */}
-                 <div>
+                <div>
                     <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="googleMapsUrl">Google Maps URL</label>
                     <input type="url" name="googleMapsUrl" id="googleMapsUrl" value={googleMapsUrl} onChange={handleGoogleMapsUrlChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Paste Google Maps URL here..."/>
                 </div>
@@ -252,10 +249,9 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                             id="gallery-upload"
                             multiple
                             accept="image/*"
-                            onChange={handleGalleryUpload}
+                            onChange={handleGalleryFilesChange}
                             className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
                         />
-                         {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading gallery...</p>}
                     </div>
                     
                     <h4 className="text-md font-semibold text-gray-600 mb-2">Or add by URL</h4>

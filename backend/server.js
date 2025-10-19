@@ -96,7 +96,7 @@ app.post('/api/places', upload.fields([
     try {
         const {
             name, description, station_id, category, opening_hours,
-            travelInfo, phone, latitude, longitude, contact, gallery: galleryUrls
+            travelinfo, phone, latitude, longitude, contact, gallery: galleryUrls // Corrected to travelinfo
         } = req.body;
 
         const imageUrl = req.files.image ? `${process.env.BACKEND_URL}/images/${req.files.image[0].filename}` : null;
@@ -108,10 +108,10 @@ app.post('/api/places', upload.fields([
         const location = (latitude && longitude) ? JSON.stringify({ lat: parseFloat(latitude), lng: parseFloat(longitude) }) : null;
         const parsedContact = contact ? JSON.parse(contact) : {};
         
-        const sql = `INSERT INTO places (name, description, station_id, category, image_url, opening_hours, "travelInfo", phone, location, contact, gallery) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
+        const sql = `INSERT INTO places (name, description, station_id, category, image_url, opening_hours, travelinfo, phone, location, contact, gallery) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`;
         const params = [
             name, description, station_id, category, imageUrl, opening_hours,
-            travelInfo, phone, location, parsedContact, galleryImageUrls
+            travelinfo, phone, location, parsedContact, galleryImageUrls // Corrected to travelinfo
         ];
         
         const result = await db.query(sql, params);
@@ -132,7 +132,7 @@ app.put('/api/places/:id', upload.fields([
     try {
         const {
             name, description, station_id, category, opening_hours,
-            travelInfo, phone, latitude, longitude, contact, gallery: galleryUrls, image // Keep existing image if not updated
+            travelinfo, phone, latitude, longitude, contact, gallery: galleryUrls, image // Corrected to travelinfo
         } = req.body;
         
         let imageUrl = image; // Keep existing one by default
@@ -147,10 +147,10 @@ app.put('/api/places/:id', upload.fields([
         const location = (latitude && longitude) ? JSON.stringify({ lat: parseFloat(latitude), lng: parseFloat(longitude) }) : null;
         const parsedContact = contact ? JSON.parse(contact) : {};
 
-        const sql = `UPDATE places SET name = $1, description = $2, station_id = $3, category = $4, image_url = $5, opening_hours = $6, "travelInfo" = $7, phone = $8, location = $9, contact = $10, gallery = $11 WHERE id = $12 RETURNING *`;
+        const sql = `UPDATE places SET name = $1, description = $2, station_id = $3, category = $4, image_url = $5, opening_hours = $6, travelinfo = $7, phone = $8, location = $9, contact = $10, gallery = $11 WHERE id = $12 RETURNING *`;
         const params = [
             name, description, station_id, category, imageUrl, opening_hours,
-            travelInfo, phone, location, parsedContact, galleryImageUrls, id
+            travelinfo, phone, location, parsedContact, galleryImageUrls, id // Corrected to travelinfo
         ];
 
         const result = await db.query(sql, params);
