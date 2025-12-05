@@ -17,8 +17,13 @@ const PORT = process.env.PORT || 3001;
 const vercelFrontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 const corsOptions = {
-    origin: [vercelFrontendUrl, 'http://localhost:3000'],
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: [
+        vercelFrontendUrl, 
+        'http://localhost:3000',
+        'https://bkk-greenline-explorer-test.vercel.app' // เพิ่มโดเมน Vercel ของคุณโดยตรง
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true // จำเป็นสำหรับ Socket.IO และการส่ง Cookie/Session ข้ามโดเมน
 };
 
 const io = new Server(server, {
