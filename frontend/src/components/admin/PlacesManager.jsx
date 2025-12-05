@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import ConfirmationModal from '../shared/ConfirmationModal.jsx'; // Corrected import
-import Notification from '../shared/Notification.jsx'; // Corrected import
-import { PlaceForm } from './PlaceForm.jsx'; // Corrected import
+import ConfirmationModal from '../shared/ConfirmationModal.jsx';
+import Notification from '../shared/Notification.jsx';
+import { PlaceForm } from './PlaceForm.jsx';
 import ReviewsManager from './ReviewsManager.jsx';
-import { API_URL } from '../../apiConfig.js'; // Use centralized config
+import { API_URL } from '../../apiConfig.js';
 
 function PlacesManager() {
     const [places, setPlaces] = useState([]);
@@ -27,7 +27,7 @@ function PlacesManager() {
                 fetch(`${API_URL}/places`),
                 fetch(`${API_URL}/stations`)
             ]);
-            if (!placesRes.ok || !stationsRes.ok) throw new Error('Failed to fetch places or stations data');
+            if (!placesRes.ok || !stationsRes.ok) throw new Error('Failed to fetch data');
             const placesData = await placesRes.json();
             const stationsData = await stationsRes.json();
             
@@ -40,9 +40,7 @@ function PlacesManager() {
         }
     }, []);
     
-    useEffect(() => { 
-        fetchInitialData(); 
-    }, [fetchInitialData]);
+    useEffect(() => { fetchInitialData(); }, [fetchInitialData]);
 
     const handleDeleteClick = (id) => setPlaceToDelete(id);
 
@@ -50,7 +48,7 @@ function PlacesManager() {
         if (!placeToDelete) return;
         try {
             const response = await fetch(`${API_URL}/places/${placeToDelete}`, { method: 'DELETE' });
-            if (!response.ok) throw new Error('Failed to delete place.');
+            if (!response.ok) throw new Error('Failed to delete');
             showNotification('Place deleted successfully!', 'success');
             await fetchInitialData();
         } catch (error) {
@@ -66,15 +64,22 @@ function PlacesManager() {
         const method = isUpdating ? 'PUT' : 'POST';
 
         try {
+            // ตรวจสอบข้อมูลก่อนส่ง
+            if (!placeData.station_id) {
+                throw new Error("Please select a station.");
+            }
+
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(placeData),
             });
 
+            const data = await response.json();
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to save place.');
+                // แสดงข้อความ error ที่ได้จาก Backend
+                throw new Error(data.error || 'Failed to save place.');
             }
             
             showNotification(`Place ${isUpdating ? 'updated' : 'added'} successfully!`, 'success');
@@ -82,6 +87,7 @@ function PlacesManager() {
             setIsAdding(false);
             await fetchInitialData();
         } catch (error) {
+            console.error("Save Error:", error);
             showNotification(error.message, 'error');
         }
     };
@@ -91,16 +97,13 @@ function PlacesManager() {
         setIsAdding(false);
     };
 
+    const handleManageReviews = (place) => setManagingReviewsFor(place);
 
-    const handleManageReviews = (place) => {
-        setManagingReviewsFor(place);
-    };
-
-    if (isLoading) return <p>Loading places...</p>;
+    if (isLoading) return <p className="text-center p-10">Loading places...</p>;
 
     return (
-        <div>
-            {placeToDelete && <ConfirmationModal message="Are you sure you want to delete this place?" onConfirm={confirmDelete} onCancel={() => setPlaceToDelete(null)} />}
+        <div className="space-y-6">
+            {placeToDelete && <ConfirmationModal message="Delete this place?" onConfirm={confirmDelete} onCancel={() => setPlaceToDelete(null)} />}
             
             {managingReviewsFor && (
                 <ReviewsManager
@@ -113,8 +116,8 @@ function PlacesManager() {
 
             <Notification message={notification.message} type={notification.type} onClose={() => setNotification({ message: null, type: 'error' })} />
             
-            <div className="flex justify-end mb-4">
-                <button onClick={() => { setIsAdding(true); setEditingPlace(null); }} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-px">+ Add New Place</button>
+            <div className="flex justify-end">
+                <button onClick={() => { setIsAdding(true); setEditingPlace(null); }} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow">+ Add New Place</button>
             </div>
 
             {(isAdding || editingPlace) && (
@@ -128,30 +131,30 @@ function PlacesManager() {
                 />
             )}
 
-            <div className="bg-white shadow-lg rounded-lg overflow-x-auto">
+            <div className="bg-white shadow rounded-lg overflow-hidden">
                 <table className="min-w-full leading-normal">
-                     <thead className="bg-gray-100">
-                        <tr className="text-left text-gray-600 uppercase text-sm">
-                            <th className="py-3 px-5 font-semibold">Name</th>
-                            <th className="py-3 px-5 font-semibold">Station ID</th>
-                            <th className="py-3 px-5 font-semibold">Category</th>
-                            <th className="py-3 px-5 font-semibold text-right">Actions</th>
+                     <thead className="bg-gray-50">
+                        <tr className="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="px-6 py-3">Name</th>
+                            <th className="px-6 py-3">Station ID</th>
+                            <th className="px-6 py-3">Category</th>
+                            <th className="px-6 py-3 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="text-gray-700">
+                    <tbody className="bg-white divide-y divide-gray-200">
                          {places.length > 0 ? places.map((place) => (
-                            <tr key={place.id} className="border-b border-gray-200 hover:bg-gray-50">
-                                <td className="py-4 px-5">{place.name}</td>
-                                <td className="py-4 px-5">{place.station_id}</td>
-                                <td className="py-4 px-5">{place.category}</td>
-                                <td className="py-4 px-5 text-right space-x-2">
-                                    <button onClick={() => handleManageReviews(place)} className="text-green-600 hover:text-green-900 font-semibold">Reviews</button>
-                                    <button onClick={() => handleEdit(place)} className="text-blue-600 hover:text-blue-900 font-semibold">Edit</button>
-                                    <button onClick={() => handleDeleteClick(place.id)} className="text-red-600 hover:text-red-900 font-semibold">Delete</button>
+                            <tr key={place.id}>
+                                <td className="px-6 py-4 whitespace-nowrap text-gray-900">{place.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-gray-500">{place.station_id}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-gray-500">{place.category}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-3">
+                                    <button onClick={() => handleManageReviews(place)} className="text-green-600 hover:text-green-900">Reviews</button>
+                                    <button onClick={() => handleEdit(place)} className="text-indigo-600 hover:text-indigo-900">Edit</button>
+                                    <button onClick={() => handleDeleteClick(place.id)} className="text-red-600 hover:text-red-900">Delete</button>
                                 </td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="4" className="text-center py-10 text-gray-500">No places found.</td></tr>
+                            <tr><td colSpan="4" className="px-6 py-4 text-center text-gray-500">No places found.</td></tr>
                         )}
                     </tbody>
                 </table>
