@@ -148,12 +148,30 @@ app.post('/api/places/add', upload.fields([
     const travel_info = req.body.travelInfo || req.body.travelinfo || ''; 
 
     let imageUrl = null;
+    // Fix: Handle case where image URL is sent as string in JSON body (when no new file upload)
     if (req.files && req.files.image && req.files.image[0]) {
         const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
         imageUrl = `${backendUrl}/images/${req.files.image[0].filename}`;
+    } else if (req.body.image) {
+        imageUrl = req.body.image;
     }
 
-    let galleryUrls = req.body.gallery ? JSON.parse(req.body.gallery) : [];
+    // Fix: Handle gallery which can be JSON array (from frontend fetch) or JSON string (from multipart)
+    let galleryUrls = [];
+    if (req.body.gallery) {
+        if (typeof req.body.gallery === 'string') {
+             try {
+                 galleryUrls = JSON.parse(req.body.gallery);
+             } catch (e) {
+                 console.error("Error parsing gallery string:", e);
+                 // If parse fails, it might be a single URL string or empty
+                 galleryUrls = []; 
+             }
+        } else if (Array.isArray(req.body.gallery)) {
+            galleryUrls = req.body.gallery;
+        }
+    }
+
     if (req.files && req.files.gallery) {
         const newUrls = req.files.gallery.map(file => {
             const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
@@ -208,7 +226,21 @@ app.put('/api/places/:id', upload.fields([
         imageUrl = `${backendUrl}/images/${req.files.image[0].filename}`;
     }
     
-    let galleryUrls = req.body.gallery ? JSON.parse(req.body.gallery) : [];
+    // Fix: Handle gallery type check
+    let galleryUrls = [];
+    if (req.body.gallery) {
+        if (typeof req.body.gallery === 'string') {
+             try {
+                 galleryUrls = JSON.parse(req.body.gallery);
+             } catch (e) {
+                 console.error("Error parsing gallery string:", e);
+                 galleryUrls = [];
+             }
+        } else if (Array.isArray(req.body.gallery)) {
+            galleryUrls = req.body.gallery;
+        }
+    }
+
     if (req.files && req.files.gallery) {
         const newUrls = req.files.gallery.map(file => {
             const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
