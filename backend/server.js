@@ -7,6 +7,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 const multer = require('multer');
 const fs = require('fs');
+const seedDatabase = require('./seed'); // Import seed function if needed
 
 const app = express();
 const server = http.createServer(app);
@@ -34,11 +35,12 @@ const db = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
-db.connect((err) => {
+db.connect(async (err) => {
     if (err) {
         console.error('Connection error', err.stack);
     } else {
         console.log('Connected to the PostgreSQL database.');
+        // Optional: Check if seeding is needed or add a manual trigger
     }
 });
 
@@ -61,9 +63,16 @@ const upload = multer({ storage: storage });
 // GET all places
 app.get('/api/places', async (req, res) => {
     try {
+        // Select using snake_case columns
         const result = await db.query("SELECT * FROM places ORDER BY name");
+        
+        // Map back to CamelCase for Frontend compatibility if needed, 
+        // or keep snake_case if you plan to update Frontend.
+        // Here I map them to ensure Frontend (PlaceForm.jsx) receives expected keys.
         const processedRows = result.rows.map(row => ({
             ...row,
+            openingHours: row.opening_hours, // Map DB snake_case to Frontend camelCase
+            travelInfo: row.travel_info,     // Map DB snake_case to Frontend camelCase
             gallery: row.gallery || [],
             location: row.location || null,
             contact: row.contact || {}
@@ -80,12 +89,16 @@ app.post('/api/places/add', upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'gallery', maxCount: 10 }
 ]), async (req, res) => {
-    // --- DEBUG LOG ---
     console.log("Received body for ADD:", req.body);
 
-    const { name, description, station_id, category, opening_hours, phone, latitude, longitude, contact } = req.body;
-    // Handle both casings for travelinfo to prevent errors
-    const travelinfo = req.body.travelinfo || req.body.travelInfo; 
+    // Frontend sends camelCase keys (openingHours, travelInfo)
+    // We destructure them and map to snake_case variables for DB
+    const { name, description, station_id, category, openingHours, phone, latitude, longitude, contact } = req.body;
+    
+    // Map frontend fields to DB fields
+    const opening_hours = openingHours;
+    // Handle varied naming from frontend if necessary, prioritizing camelCase
+    const travel_info = req.body.travelInfo || req.body.travelinfo || ''; 
 
     let imageUrl = null;
     if (req.files && req.files.image && req.files.image[0]) {
@@ -104,8 +117,20 @@ app.post('/api/places/add', upload.fields([
     
     const location = (latitude && longitude) ? JSON.stringify({ lat: parseFloat(latitude), lng: parseFloat(longitude) }) : null;
     
-    const sql = `INSERT INTO places (name, description, station_id, category, image_url, "opening_hours", travelinfo, phone, location, contact, gallery) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`;
-    const params = [name, description, station_id, category, imageUrl, opening_hours, travelinfo, phone, location, contact, JSON.stringify(galleryUrls)];
+    // SQL uses snake_case columns without quotes
+    const sql = `
+        INSERT INTO places (
+            name, description, station_id, category, image, 
+            opening_hours, travel_info, phone, location, contact, gallery
+        ) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+        RETURNING id
+    `;
+    
+    const params = [
+        name, description, station_id, category, imageUrl, 
+        opening_hours, travel_info, phone, location, contact, JSON.stringify(galleryUrls)
+    ];
     
     try {
         const result = await db.query(sql, params);
@@ -122,15 +147,16 @@ app.put('/api/places/:id', upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'gallery', maxCount: 10 }
 ]), async (req, res) => {
-    // --- DEBUG LOG ---
     console.log("Received body for UPDATE:", req.body);
     
     const { id } = req.params;
-    const { name, description, station_id, category, opening_hours, phone, latitude, longitude, contact, image_url } = req.body;
-    // Handle both casings for travelinfo to prevent errors
-    const travelinfo = req.body.travelinfo || req.body.travelInfo;
+    // Destructure camelCase from frontend
+    const { name, description, station_id, category, openingHours, phone, latitude, longitude, contact, image } = req.body;
+    
+    const opening_hours = openingHours;
+    const travel_info = req.body.travelInfo || req.body.travelinfo || '';
 
-    let imageUrl = image_url; // Keep old image if no new one is uploaded
+    let imageUrl = image; // Keep old image if no new one is uploaded
     if (req.files && req.files.image && req.files.image[0]) {
         const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
         imageUrl = `${backendUrl}/images/${req.files.image[0].filename}`;
@@ -147,8 +173,18 @@ app.put('/api/places/:id', upload.fields([
     
     const location = (latitude && longitude) ? JSON.stringify({ lat: parseFloat(latitude), lng: parseFloat(longitude) }) : null;
 
-    const sql = `UPDATE places SET name = $1, description = $2, station_id = $3, category = $4, image_url = $5, "opening_hours" = $6, travelinfo = $7, phone = $8, location = $9, contact = $10, gallery = $11 WHERE id = $12`;
-    const params = [name, description, station_id, category, imageUrl, opening_hours, travelinfo, phone, location, contact, JSON.stringify(galleryUrls), id];
+    // Update SQL using snake_case columns
+    const sql = `
+        UPDATE places 
+        SET name = $1, description = $2, station_id = $3, category = $4, image = $5, 
+            opening_hours = $6, travel_info = $7, phone = $8, location = $9, contact = $10, gallery = $11 
+        WHERE id = $12
+    `;
+    
+    const params = [
+        name, description, station_id, category, imageUrl, 
+        opening_hours, travel_info, phone, location, contact, JSON.stringify(galleryUrls), id
+    ];
     
     try {
         const result = await db.query(sql, params);
@@ -282,6 +318,7 @@ app.get('/api/stations', async (req, res) => {
 
 app.get('/api/places/:station_id', async (req, res) => {
     const stationId = req.params.station_id;
+    // Select using snake_case columns
     const sql = `
       SELECT 
         p.*, 
@@ -303,6 +340,8 @@ app.get('/api/places/:station_id', async (req, res) => {
         const result = await db.query(sql, [stationId]);
         const processedRows = result.rows.map(row => ({
             ...row,
+            openingHours: row.opening_hours, // Map back for Frontend
+            travelInfo: row.travel_info,     // Map back for Frontend
             reviews: row.reviews || [],
             gallery: row.gallery || [],
             location: row.location || null,
@@ -321,13 +360,32 @@ app.post('/api/places/:placeId/reviews', async (req, res) => {
     const sql = `INSERT INTO reviews (place_id, "user", rating, comment) VALUES ($1, $2, $3, $4) RETURNING id`;
     try {
         const result = await db.query(sql, [placeId, user, rating, comment]);
-        // Emit event after successfully adding a review
         io.emit('review_updated', { placeId });
         res.json({ "message": "Review added successfully", "id": result.rows[0].id });
     } catch (err) {
         console.error(err);
         res.status(400).json({ "error": err.message });
     }
+});
+
+// --- Helper route for uploading gallery manually (used by PlaceForm) ---
+app.post('/api/upload-gallery', upload.array('galleryImages', 10), (req, res) => {
+    if (!req.files || req.files.length === 0) {
+        return res.status(400).json({ error: 'No files uploaded.' });
+    }
+    const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+    const imageUrls = req.files.map(file => `${backendUrl}/images/${file.filename}`);
+    res.json({ imageUrls });
+});
+
+// --- Helper route for single image upload ---
+app.post('/api/upload', upload.single('placeImage'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded.' });
+    }
+    const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+    const imageUrl = `${backendUrl}/images/${req.file.filename}`;
+    res.json({ imageUrl });
 });
 
 
@@ -342,4 +400,3 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`Server with Socket.IO listening on ${PORT}`);
 });
-

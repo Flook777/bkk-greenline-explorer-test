@@ -15,15 +15,15 @@ async function seedDatabase(db) {
     `);
 
     console.log('Creating tables...');
-    // ใช้ SERIAL PRIMARY KEY สำหรับ auto-incrementing ID ใน PostgreSQL
-    // ใช้ JSONB สำหรับเก็บข้อมูล JSON
-    // ใช้ Double quotes (") สำหรับชื่อคอลัมน์ที่เป็น CamelCase เช่น "openingHours"
+    // Updated: Changed "openingHours" to opening_hours and "travelInfo" to travel_info
+    // Using snake_case allows us to omit double quotes in SQL queries
     await db.query(`
         CREATE TABLE stations (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL
         );
     `);
+    
     await db.query(`
         CREATE TABLE places (
             id SERIAL PRIMARY KEY,
@@ -33,13 +33,14 @@ async function seedDatabase(db) {
             description TEXT,
             image TEXT,
             gallery JSONB,
-            "openingHours" TEXT,
-            "travelInfo" TEXT,
+            opening_hours TEXT,  
+            travel_info TEXT,    
             phone TEXT,
             contact JSONB,
             location JSONB
         );
     `);
+    
     await db.query(`
         CREATE TABLE reviews (
             id SERIAL PRIMARY KEY,
@@ -49,6 +50,7 @@ async function seedDatabase(db) {
             comment TEXT
         );
     `);
+    
     await db.query(`
         CREATE TABLE events (
             id SERIAL PRIMARY KEY,
@@ -66,8 +68,12 @@ async function seedDatabase(db) {
 
     console.log('Inserting data into places...');
     for (const place of (data.places || [])) {
+        // Map JSON data (potentially camelCase) to database columns (snake_case)
         await db.query(
-            `INSERT INTO places (station_id, name, category, description, image, gallery, "openingHours", "travelInfo", phone, contact, location) 
+            `INSERT INTO places (
+                station_id, name, category, description, image, gallery, 
+                opening_hours, travel_info, phone, contact, location
+            ) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
             [
                 place.station_id,
@@ -76,8 +82,8 @@ async function seedDatabase(db) {
                 place.description,
                 place.image,
                 JSON.stringify(place.gallery || []),
-                place.openingHours,
-                place.travelInfo,
+                place.openingHours, // Input from JSON
+                place.travelInfo,   // Input from JSON
                 place.phone,
                 JSON.stringify(place.contact || {}),
                 JSON.stringify(place.location || null)
@@ -85,7 +91,7 @@ async function seedDatabase(db) {
         );
     }
 
-    console.log('Database seeded successfully with all tables.');
+    console.log('Database seeded successfully with all tables (using snake_case).');
 
   } catch (error) {
     console.error('Error seeding database:', error);
