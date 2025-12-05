@@ -14,23 +14,42 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 3001;
 
 // --- CORS Configuration ---
-const vercelFrontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+// กำหนด Allowed Origins ให้ชัดเจน
+const allowedOrigins = [
+    process.env.FRONTEND_URL,                   // จาก .env (ถ้ามี)
+    'http://localhost:3000',                    // Localhost dev
+    'https://bkk-greenline-explorer-test.vercel.app' // Vercel Production (ต้องไม่มี / ปิดท้าย)
+].filter(Boolean); // กรองค่าที่เป็น null/undefined ออก
 
 const corsOptions = {
-    origin: [
-        vercelFrontendUrl, 
-        'http://localhost:3000',
-        'https://bkk-greenline-explorer-test.vercel.app' // เพิ่มโดเมน Vercel ของคุณโดยตรง
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true // จำเป็นสำหรับ Socket.IO และการส่ง Cookie/Session ข้ามโดเมน
+    origin: function (origin, callback) {
+        // อนุญาต request ที่ไม่มี origin (เช่น server-to-server หรือ postman)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.indexOf(origin) === -1) {
+            // ถ้า origin ไม่อยู่ในรายการที่อนุญาต
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // เพิ่ม OPTIONS
+    credentials: true, // จำเป็นสำหรับ Cookie/Session/Socket.IO
+    allowedHeaders: ["Content-Type", "Authorization"]
 };
 
+// 1. ตั้งค่า CORS ให้ Express (สำหรับ HTTP Requests ปกติ)
+app.use(cors(corsOptions));
+
+// 2. ตั้งค่า CORS ให้ Socket.IO (สำคัญมากสำหรับการเชื่อมต่อ Real-time)
 const io = new Server(server, {
-    cors: corsOptions
+    cors: {
+        origin: allowedOrigins, // Socket.IO ต้องการ array ของ strings หรือฟังก์ชัน
+        methods: ["GET", "POST"],
+        credentials: true
+    }
 });
 
-app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
