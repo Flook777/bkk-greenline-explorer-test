@@ -9,8 +9,8 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         station_id: '',
         category: '',
         image: '',
-        openingHours: '',
-        travelInfo: '',
+        openingHours: '', // Keep camelCase for internal state
+        travelInfo: '',   // Keep camelCase for internal state
         phone: '',
         latitude: '',
         longitude: ''
@@ -41,6 +41,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 setGoogleMapsUrl('');
             }
 
+            // Handle contact object -> array for form
             const placeContacts = place.contact ? Object.entries(place.contact).map(([platform, url]) => ({ platform, url })) : [];
             setContacts(placeContacts.length > 0 ? placeContacts : [{ platform: '', url: '' }]);
             
@@ -75,7 +76,10 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
     const handleGoogleMapsUrlChange = (e) => {
         const url = e.target.value;
         setGoogleMapsUrl(url);
-        const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        // Extract lat/lng from Google Maps URL if possible
+        // Example: https://www.google.com/maps?q=13.7563,100.5018
+        // Or: https://www.google.com/maps/@13.7563,100.5018,15z
+        const match = url.match(/@?(-?\d+\.\d+),(-?\d+\.\d+)/);
         if (match) {
             setFormData(prev => ({
                 ...prev,
@@ -95,6 +99,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
 
         try {
             const res = await axios.post(`${API_URL}/upload`, uploadData);
+            // Use the URL returned from the server
             setFormData(prev => ({ ...prev, image: res.data.imageUrl }));
             showNotification('Image uploaded successfully!', 'success');
         } catch (error) {
@@ -117,6 +122,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
         setIsUploading(true);
         try {
             const res = await axios.post(`${API_URL}/upload-gallery`, uploadData);
+             // Append new URLs to existing gallery
             setGallery(prev => [...prev.filter(url => url.trim() !== ''), ...res.data.imageUrls]);
             showNotification(`${files.length} image(s) uploaded successfully!`, 'success');
         } catch (error) {
@@ -149,6 +155,8 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // 1. Prepare Contact Object
         const finalContacts = contacts.reduce((acc, contact) => {
             if (contact.platform && contact.url) {
                 acc[contact.platform] = contact.url;
@@ -156,14 +164,30 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
             return acc;
         }, {});
 
+        // 2. Prepare Gallery Array
         const finalGallery = gallery.filter(url => url && url.trim() !== '');
 
+        // 3. Construct the payload matching Backend expectations
+        // Note: Backend expects simple JSON object structure now, since we upload images separately first.
+        // However, if we were using FormData to send everything at once, we'd need to stringify objects.
+        // The PlacesManager sends this as JSON (Content-Type: application/json), so we can send objects directly.
+        
         const submissionData = {
-            ...formData,
-            id: place?.id,
-            contact: finalContacts,
-            gallery: finalGallery,
+            id: place?.id, // Include ID if editing
+            name: formData.name,
+            description: formData.description,
+            station_id: formData.station_id,
+            category: formData.category,
+            image: formData.image, // This is the URL string from the separate upload
+            openingHours: formData.openingHours, // Matches Backend's camelCase mapping expectation
+            travelInfo: formData.travelInfo,     // Matches Backend's camelCase mapping expectation
+            phone: formData.phone,
+            latitude: formData.latitude,
+            longitude: formData.longitude,
+            contact: finalContacts, // Backend expects JSONB, passing object is fine with application/json
+            gallery: finalGallery   // Backend expects JSONB, passing array is fine with application/json
         };
+
         onSave(submissionData);
     };
     
@@ -193,9 +217,16 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                     </div>
                     <div>
                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="image">Main Image</label>
+                        {/* File Input for Upload */}
                         <input type="file" name="image" id="image" onChange={handleFileUpload} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
                          {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading...</p>}
-                        {formData.image && !isUploading && <img src={formData.image} alt="Preview" className="mt-2 rounded-lg h-24 object-contain border border-gray-200" />}
+                        {/* Show Preview if URL exists */}
+                        {formData.image && !isUploading && (
+                            <div className="mt-2">
+                                <p className="text-xs text-gray-500 mb-1">Current Image URL: {formData.image}</p>
+                                <img src={formData.image} alt="Preview" className="rounded-lg h-32 object-contain border border-gray-200 bg-gray-50" />
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -216,9 +247,19 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 </div>
 
                 {/* --- Location --- */}
-                 <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="googleMapsUrl">Google Maps URL</label>
-                    <input type="url" name="googleMapsUrl" id="googleMapsUrl" value={googleMapsUrl} onChange={handleGoogleMapsUrlChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Paste Google Maps URL here..."/>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="googleMapsUrl">Google Maps URL (Auto-fill Lat/Lng)</label>
+                        <input type="url" name="googleMapsUrl" id="googleMapsUrl" value={googleMapsUrl} onChange={handleGoogleMapsUrlChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" placeholder="Paste Google Maps URL here..."/>
+                    </div>
+                    <div>
+                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="latitude">Latitude</label>
+                        <input type="number" step="any" name="latitude" id="latitude" value={formData.latitude} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                    </div>
+                    <div>
+                         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="longitude">Longitude</label>
+                        <input type="number" step="any" name="longitude" id="longitude" value={formData.longitude} onChange={handleChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-400" />
+                    </div>
                 </div>
                 
                 {/* --- Description --- */}
@@ -228,7 +269,7 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                 </div>
 
                 {/* --- Dynamic Contacts --- */}
-                <div>
+                <div className="border-t pt-4">
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">Contact Channels</h3>
                     {contacts.map((contact, index) => (
                         <div key={index} className="flex items-center gap-2 mb-2">
@@ -237,15 +278,15 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                             <button type="button" onClick={() => removeContactField(index)} className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600">-</button>
                         </div>
                     ))}
-                    <button type="button" onClick={addContactField} className="bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600">+ Add Contact</button>
+                    <button type="button" onClick={addContactField} className="mt-2 text-sm bg-blue-100 text-blue-600 py-1 px-3 rounded-lg hover:bg-blue-200">+ Add Contact</button>
                 </div>
 
                 {/* --- Dynamic Gallery --- */}
-                <div>
+                <div className="border-t pt-4">
                     <h3 className="text-lg font-semibold text-gray-700 mb-2">Image Gallery</h3>
-                    <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gallery-upload">
-                            Upload Images
+                    <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                        <label className="block text-gray-700 text-sm font-bold mb-2 cursor-pointer" htmlFor="gallery-upload">
+                             📂 Click here to upload multiple gallery images
                         </label>
                         <input
                             type="file"
@@ -253,28 +294,59 @@ export function PlaceForm({ place, stations, onSave, onCancel, isAdding, showNot
                             multiple
                             accept="image/*"
                             onChange={handleGalleryUpload}
-                            className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                            className="hidden"
                         />
-                         {isUploading && <p className="text-sm text-gray-500 mt-2">Uploading gallery...</p>}
+                         {isUploading && <p className="text-sm text-blue-500 mt-2 animate-pulse">Uploading gallery images...</p>}
                     </div>
                     
-                    <h4 className="text-md font-semibold text-gray-600 mb-2">Or add by URL</h4>
-                    {gallery.map((url, index) => (
-                        <div key={index} className="flex items-center gap-2 mb-2">
-                            <input type="url" value={url} onChange={(e) => handleGalleryChange(index, e.target.value)} placeholder="Image URL" className="flex-1 px-3 py-2 border rounded-lg"/>
-                            <button type="button" onClick={() => removeGalleryField(index)} className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600">-</button>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                        {gallery.map((url, index) => (
+                            url && (
+                                <div key={index} className="relative group">
+                                    <img src={url} alt={`Gallery ${index}`} className="w-full h-24 object-cover rounded-lg border border-gray-200" />
+                                    <button 
+                                        type="button" 
+                                        onClick={() => removeGalleryField(index)} 
+                                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        title="Remove Image"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            )
+                        ))}
+                    </div>
+                     <div className="mt-4">
+                        <p className="text-sm text-gray-500 mb-1">Or add by URL:</p>
+                        <div className="flex gap-2">
+                             <input type="url" placeholder="https://example.com/image.jpg" className="flex-1 px-3 py-2 border rounded-lg" onKeyDown={(e) => {
+                                 if (e.key === 'Enter') {
+                                     e.preventDefault();
+                                     if(e.target.value) {
+                                         setGallery([...gallery, e.target.value]);
+                                         e.target.value = '';
+                                     }
+                                 }
+                             }} />
+                             <button type="button" className="bg-gray-200 px-4 rounded-lg text-gray-600" onClick={(e) => {
+                                 const input = e.target.previousSibling;
+                                 if(input.value) {
+                                      setGallery([...gallery, input.value]);
+                                      input.value = '';
+                                 }
+                             }}>Add</button>
                         </div>
-                    ))}
-                    <button type="button" onClick={addGalleryField} className="bg-blue-500 text-white py-1 px-3 rounded-lg hover:bg-blue-600">+ Add Image URL</button>
+                    </div>
                 </div>
 
                 {/* --- Action Buttons --- */}
-                <div className="mt-8 flex justify-end gap-4">
-                    <button type="button" onClick={onCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
-                    <button type="submit" className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Save Place</button>
+                <div className="mt-8 flex justify-end gap-4 pt-6 border-t">
+                    <button type="button" onClick={onCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">Cancel</button>
+                    <button type="submit" disabled={isUploading} className={`bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-colors ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                        {isUploading ? 'Uploading...' : 'Save Place'}
+                    </button>
                 </div>
             </form>
         </div>
     );
 }
-
