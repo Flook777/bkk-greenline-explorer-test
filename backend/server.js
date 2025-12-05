@@ -7,7 +7,7 @@ const http = require('http');
 const { Server } = require("socket.io");
 const multer = require('multer');
 const fs = require('fs');
-const seedDatabase = require('./seed'); // Import seed function if needed
+const seedDatabase = require('./seed'); // Import seed function
 
 const app = express();
 const server = http.createServer(app);
@@ -35,12 +35,40 @@ const db = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+// Updated: Auto-seed logic on connection
 db.connect(async (err) => {
     if (err) {
         console.error('Connection error', err.stack);
     } else {
         console.log('Connected to the PostgreSQL database.');
-        // Optional: Check if seeding is needed or add a manual trigger
+        
+        // Check if 'stations' table exists and has data
+        try {
+            const tableCheck = await db.query(`
+                SELECT EXISTS (
+                    SELECT FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_name = 'stations'
+                );
+            `);
+            
+            const tableExists = tableCheck.rows[0].exists;
+
+            if (!tableExists) {
+                console.log('Stations table not found. Seeding database...');
+                await seedDatabase(db);
+            } else {
+                const countResult = await db.query('SELECT count(*) FROM stations');
+                if (parseInt(countResult.rows[0].count) === 0) {
+                    console.log('Database tables exist but are empty. Seeding data...');
+                    await seedDatabase(db);
+                } else {
+                    console.log('Database already contains data. Skipping seed.');
+                }
+            }
+        } catch (seedErr) {
+            console.error('Error checking/seeding database:', seedErr);
+        }
     }
 });
 
@@ -66,9 +94,7 @@ app.get('/api/places', async (req, res) => {
         // Select using snake_case columns
         const result = await db.query("SELECT * FROM places ORDER BY name");
         
-        // Map back to CamelCase for Frontend compatibility if needed, 
-        // or keep snake_case if you plan to update Frontend.
-        // Here I map them to ensure Frontend (PlaceForm.jsx) receives expected keys.
+        // Map back to CamelCase for Frontend compatibility
         const processedRows = result.rows.map(row => ({
             ...row,
             openingHours: row.opening_hours, // Map DB snake_case to Frontend camelCase
@@ -91,13 +117,10 @@ app.post('/api/places/add', upload.fields([
 ]), async (req, res) => {
     console.log("Received body for ADD:", req.body);
 
-    // Frontend sends camelCase keys (openingHours, travelInfo)
-    // We destructure them and map to snake_case variables for DB
     const { name, description, station_id, category, openingHours, phone, latitude, longitude, contact } = req.body;
     
     // Map frontend fields to DB fields
     const opening_hours = openingHours;
-    // Handle varied naming from frontend if necessary, prioritizing camelCase
     const travel_info = req.body.travelInfo || req.body.travelinfo || ''; 
 
     let imageUrl = null;
@@ -150,7 +173,6 @@ app.put('/api/places/:id', upload.fields([
     console.log("Received body for UPDATE:", req.body);
     
     const { id } = req.params;
-    // Destructure camelCase from frontend
     const { name, description, station_id, category, openingHours, phone, latitude, longitude, contact, image } = req.body;
     
     const opening_hours = openingHours;
